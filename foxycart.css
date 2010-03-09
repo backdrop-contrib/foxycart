@@ -1,0 +1,18 @@
+
+/* $Id$ */ 
+
+#fc_full_cart_logo
+{
+	float: right;
+	display: block;
+	vertical-align: text-bottom;
+	padding-top: 5px;
+}
+
+#fc_admin_logo
+{
+	float: left;
+	display: block;
+	vertical-align: text-bottom;
+	padding-right: 10px;
+}
