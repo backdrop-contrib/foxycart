@@ -19,7 +19,7 @@ $output = <<<EOD
 
 <h2>foxycart.com Admin Settings</h2>
 <p><strong>Datafeed</strong>: In the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">foxycart.com admin</a> under Store -&gt; Advanced -&gt; Datafeed URL, you can provide a link to:<br /><code>{$datafeed_link}</code><br />Once enabled, you can view the logged datafed transactions {$log_link}.</p>
-<p><strong>Single Sign-On</strong>: In the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">foxycart.com admin</a> under Store -&gt; Advanced, check the "Enable Shared Authentication" box as well as in the "Shared Authentication URL" field supply the following link:<br /><code>{$sso_link}</code>.<br/>Also, be sure to copy the 'API Key' from the foxycart.com admin to the Drupal FoxyCart Module admin settings.</strong>
+<p><strong>Single Sign-On</strong>: In the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">foxycart.com admin</a> under Store -&gt; Advanced, check the "Enable Shared Authentication" box as well as in the "Shared Authentication URL" field supply the following link:<br /><code>{$sso_link}</code>.<br/>Also, be sure to copy the 'API Key' from the foxycart.com admin to the Drupal FoxyCart Module admin settings.  <br/>Select 'md5' for the 'customer password hash type'.</strong>
 EOD;
 
   return $output;

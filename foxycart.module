@@ -65,7 +65,7 @@ function foxycart_menu() {
  	'type' => MENU_CALLBACK,
 	'description' => 'Process Foxycart SSO',
 	'page callback' => 'foxycart_process_sso', 
-	'access arguments' => array(1));
+	'access callback' => TRUE);
 
   // Used during development to test the datafeed functionality
 //    $items['admin/foxycart/datafeedtest'] = array(
@@ -206,8 +206,7 @@ function foxycart_api_getuser($email) {
 
 /* Used to synchronize user accounts with FoxyCart.com when a user account is updated */
 function foxycart_user($op, &$edit, &$account, $category = NULL) {
-  if ( (variable_get('foxycart_user_sync', false) == true)
-  && (variable_get('foxycart_enable_sso', false) == true)	) {
+  if ( variable_get('foxycart_user_sync', false) == true	) {
     switch ($op) {
       case 'submit':
         $foxyresponse = foxycart_api_update_user($account->mail, $account->pass);
@@ -254,7 +253,6 @@ function foxycart_process_sso() {
   global $base_root;
   global $user;
 
-  $sso_enabled = variable_get('foxycart_enable_sso', false);
   $user_is_authenticated = true;
   $foxycart_api_key = foxycart_get_datafeedkey();
   $foxycart_domain = foxycart_get_domain();
@@ -269,7 +267,7 @@ function foxycart_process_sso() {
   // URL for non_auth checkout
   $full_redirect = $base_root . '/user';
 
-  if ($sso_enabled && isset($_REQUEST['timestamp']) && isset($_REQUEST['fcsid'])) {
+  if (isset($_REQUEST['timestamp']) && isset($_REQUEST['fcsid'])) {
     $fcsid = $_REQUEST['fcsid'];
     $timestamp = $_REQUEST['timestamp'] + (60 * 30); // valid for 30 minutes;
 
@@ -309,6 +307,14 @@ function foxycart_perm() {
   return array('access administration pages');
 }
 
+function get_auth_settings_description()
+{
+  $desc = '<p><a href="http://wiki.foxycart.com/docs:single_sign_on">FoxyCart\'s SSO</a> allows you to send an authenticated user from your own site to your FoxyCart checkout without needing to re-enter their username (email address) and password. </p><p><strong>Note:</strong> You must enable "shared authentication" in the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">FoxyCart store settings</a> under the "advanced" menu. For more details, see the ' . l( t("help"), "admin/foxycart/help") . ' section.</p>';
+  if (!extension_loaded("curl")) {
+    $desc .= t('<strong>IMPORTANT NOTE</strong>: The ' . l('php_curl', 'http://php.net/manual/en/book.curl.php') . ' library must be installed to enable Single Sign-On (SSO) / shared authentication.');
+  }
+  return $desc;
+}
 function foxycart_admin_settings() {
   global $base_root;
   $path = drupal_get_path('module', 'foxycart');
@@ -340,14 +346,8 @@ function foxycart_admin_settings() {
 
   $form['auth'] = array(
   	'#type' => 'fieldset',
-  	'#title' => t('Authentication settings'));
-
-  $form['auth']['foxycart_enable_sso'] = array(
-  	'#type' => 'checkbox',
-  	'#title' => t("Enable Single Sign-On (SSO) / shared authentication"),
-  	'#default_value' => variable_get('foxycart_enable_sso', false),
-  	'#description' => '<a href="http://wiki.foxycart.com/docs:single_sign_on">FoxyCart\'s SSO</a> allows you to send an authenticated user from your own site to your FoxyCart checkout without needing to re-enter their username (email address) and password. <br/><strong>Note:</strong> You must enable "shared authentication" in the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">FoxyCart store settings</a> under the "advanced" menu',
-  	'#required' => FALSE);	
+  	'#title' => t('Authentication settings'),
+    '#description' => get_auth_settings_description());
 
   $form['auth']['foxycart_user_sync'] = array(
   	'#type' => 'checkbox',
@@ -358,9 +358,9 @@ function foxycart_admin_settings() {
 
   $form['auth']['foxycart_allow_non_auth_checkout'] = array(
   	'#type' => 'checkbox',
-  	'#title' => t("Allow unauthenticated checkout"),
+  	'#title' => t("Allow SSO unauthenticated checkout"),
   	'#default_value' => variable_get('foxycart_allow_non_auth_checkout', true),
-  	'#description' => t('If the user is not logged in, do you still want to allow them to proceed to checkout?'),
+  	'#description' => t('If SSO is being used and the user is not logged in, do you still want to allow them to proceed to checkout?'),
   	'#required' => FALSE);	
 
   $form['display'] = array(
@@ -378,13 +378,8 @@ function foxycart_admin_settings() {
 }
 
 function foxycart_admin_settings_validate($form, &$form_state) {
-  if ($form_state['values']['foxycart_enable_sso'] == false
-  && ($form_state['values']['foxycart_user_sync'] == true || $form_state['values']['foxycart_allow_non_auth_checkout'] == true)) {
-    form_set_error('', t('Single Sign-On must be enabled for User Sync or Non Auth Checkout'));
-  }
-
-  if (($form_state['values']['foxycart_enable_sso'] == true) && (!extension_loaded("curl"))) {
-    form_set_error('', t("The php_curl library must be installed to enable Single Sign-On (SSO) / shared authentication."));
+  if (($form_state['values']['foxycart_user_sync'] == true) && (!extension_loaded("curl"))) {
+    form_set_error('', t("The php_curl library must be installed to enable user sync."));
   }
 }
 
