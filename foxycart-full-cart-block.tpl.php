@@ -1,6 +1,5 @@
 <?php
 
-// $Id$ 
 ?>
 <div id="fc_cart">
 <h2>Your Cart</h2>

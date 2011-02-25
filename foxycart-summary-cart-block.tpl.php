@@ -1,6 +1,5 @@
 <?php
 
-// $Id$ 
 
 ?>
 <div id="fc_minicart" style="display: none">Your Cart: 

@@ -1,6 +1,5 @@
 <?php
 
-// $Id$
 
 function foxycart_detailed_help() {
   global $base_root;

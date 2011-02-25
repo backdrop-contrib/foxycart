@@ -1,5 +1,4 @@
 
-// $Id$ 
 
 function fc_BuildFoxyCart() {
         fc_FoxyCart = "";
