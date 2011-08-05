@@ -3,5 +3,5 @@
 
 name = FoxyCart
 description = Provides integration of <a href="http://affiliate.foxycart.com/idevaffiliate.php?id=165">FoxyCart</a> with Drupal
-core = 6.x
+core = 7.x
 

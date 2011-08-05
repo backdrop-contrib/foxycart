@@ -7,7 +7,7 @@
  *
  * Module to provide integration of Drupal and FoxyCart.
  *
- * Copyright (c) 2010 Jason York -  http://www.yorkspace.com
+ * Copyright (c) 2011 Jason York -  http://www.yorkspace.com
  *
  */
 
@@ -18,11 +18,15 @@ function foxycart_init() {
   if (strlen($foxycart_yourdomain)) {
 
     /* Include the required Javascript and CSS from foxycart.com */
-    drupal_set_html_head('<script src="https://' . $foxycart_yourdomain . '.foxycart.com/files/foxycart_includes.js" type="text/javascript" charset="utf-8"></script>');
-    drupal_set_html_head('<link rel="stylesheet" href="https://' . $foxycart_yourdomain . '.foxycart.com/files/foxybox.css" type="text/css" media="screen" charset="utf-8" />');
-    drupal_set_html_head('<link rel="stylesheet" href="https://' . $foxycart_yourdomain . '.foxycart.com/themes/standard/theme.foxybox.css" type="text/css" media="screen" charset="utf-8" />');
-    drupal_add_js(drupal_get_path('module', 'foxycart') .'/foxycart.js');
-    drupal_add_css(drupal_get_path('module', 'foxycart') .'/foxycart.css');
+  	drupal_add_js('https://' . $foxycart_yourdomain . '.foxycart.com/files/foxycart_includes.js', 'external');
+  	drupal_add_js(drupal_get_path('module', 'foxycart') .'/foxycart.js');
+
+  	drupal_add_css(drupal_get_path('module', 'foxycart') .'/foxycart.css');
+  	drupal_add_css('https://' . $foxycart_yourdomain . '.foxycart.com/files/foxybox.css', array('type' => 'external'));
+  	drupal_add_css('https://' . $foxycart_yourdomain . '.foxycart.com/themes/standard/theme.foxybox.css', array('type' => 'external'));
+  	
+  	
+  	 
   }
 }
 
@@ -87,35 +91,35 @@ function foxycart_help($path, $arg) {
   }
 }
 
-function foxycart_theme() {
+function foxycart_theme($existing, $type, $theme, $path) {
   return array(
-    'foxycart_full_cart_block' => array(
-	  'arguments' => array('fc_domain' => foxycart_get_domain(),
+    'foxycart_summary_cart_block' => array(
+	  'variables' => array('fc_domain' => foxycart_get_domain()),
+      'template' => 'foxycart-summary-cart-block'
+      )
+      ,'foxycart_full_cart_block' => array(
+	  'variables' => array('fc_domain' => foxycart_get_domain(),
                            'logo'      => ''),
       'template' => 'foxycart-full-cart-block'
-      ),
-    'foxycart_summary_cart_block' => array(
-	  'arguments' => array('fc_domain' => foxycart_get_domain()),
-      'template' => 'foxycart-summary-cart-block'
-      ),
-      );
+      )
+   );
 }
 
 function foxycart_get_full_cart_block() {
   global $base_root;
-
+  
   $foxycart_domain = foxycart_get_domain();
   $path = drupal_get_path('module', 'foxycart');
   if (variable_get('foxycart_show_logo', false))
   {
-    $fc_link = fclink(theme('image', $path . '/powered-by-foxycart-80x15.png', 'Powered by FoxyCart Ecommerce', 'Powered by FoxyCart Ecommerce', array('id' => 'fc_full_cart_logo')));
+  	$fc_link = fclink(theme('image', array('path' =>  $path . '/powered-by-foxycart-80x15.png', 'alt' => t('Powered by FoxyCart Ecommerce'), 'title' => t('Powered by FoxyCart Ecommerce'), 'id' => 'fc_full_cart_logo')));
   }
   else
   {
     $fc_link = "";
   }
 
-  return theme('foxycart_full_cart_block', foxycart_get_domain(), $fc_link);
+  return theme('foxycart_full_cart_block', array('fc_domain' => foxycart_get_domain(), 'logo' => $fc_link));
 }
 
 function foxycart_get_domain() {
@@ -126,28 +130,37 @@ function foxycart_get_datafeedkey() {
   return variable_get('foxycart_datafeedkey', '');
 }
 
-function foxycart_block($op = 'list', $delta = 0, $edit = array()) {
-  switch ($op) {
-    case 'list':
-      $blocks = array();
-      $blocks[0]['info'] = 'FoxyCart: Cart Summary';
-      $blocks[1]['info'] = 'FoxyCart: Full Cart';
-      return $blocks;
+/**
+* Implements hook_block_info().
+*/
+function foxycart_block_info() {
+	$blocks = array();
+    $blocks[0]['info'] = 'FoxyCart: Cart Summary';
+    $blocks[1]['info'] = 'FoxyCart: Full Cart';
+	
+	return $blocks;
+}
 
-    case 'view':
-      switch ($delta) {
-        case 0:
-          // FoxyCart: Cart Summary
-          $block['subject'] = ''; // Title is displayed in the content so it can be hidden
-          $block['content'] = theme('foxycart_summary_cart_block', foxycart_get_domain());
-          return $block;
-        case 1:
-          // FoxyCart: Full Cart
-          $block['subject'] = '';
-          $block['content'] = foxycart_get_full_cart_block();
-          return $block;
-      }
-  }
+/**
+* Implements hook_block_view().
+*/
+function foxycart_block_view($delta = 0) {
+	$block = array();
+	switch ($delta) {
+		case 0:
+			// FoxyCart: Cart Summary
+			$block['subject'] = ''; // Title is displayed in the content so it can be hidden
+			$block['content'] = theme('foxycart_summary_cart_block', array('fc_domain' => foxycart_get_domain()));
+			break;
+		case 1:
+			// FoxyCart: Full Cart
+			$block['subject'] = '';
+			$block['content'] = foxycart_get_full_cart_block();
+			break;
+	}
+	
+	return $block;
+	
 }
 
 /* Process the datafeed supplied by FoxyCart.com after an order is processed
@@ -204,22 +217,21 @@ function foxycart_api_getuser($email) {
   return $output;
 }
 
+
 /* Used to synchronize user accounts with FoxyCart.com when a user account is updated */
-function foxycart_user($op, &$edit, &$account, $category = NULL) {
+function foxycart_user_update(&$edit, $account, $category) {
   if ( (variable_get('foxycart_user_sync', false) == true)
   && (variable_get('foxycart_enable_sso', false) == true)	) {
-    switch ($op) {
-      case 'submit':
-        $foxyresponse = foxycart_api_update_user($account->mail, $account->pass);
-        if ($foxyresponse->result == 'SUCCESS') {
-          $edit['fc_customer_id'] = (integer)$foxyresponse->customer_id;
-          user_save($account, $edit, $category);
-        }
-        break;
+	$foxyresponse = foxycart_api_update_user($account->mail, $account->pass);
+    if ($foxyresponse->result == 'SUCCESS') {
+    	$edit['fc_customer_id'] = (integer)$foxyresponse->customer_id;
+        user_save($account, $edit, $category);
     }
   }
   return NULL;
+
 }
+
 
 function foxycart_api_update_user($email, $pass) {
   $output = "";
@@ -305,7 +317,7 @@ function fclink($text = 'FoxyCart') {
   return '<a href="http://affiliate.foxycart.com/idevaffiliate.php?id=165">' . $text .'</a>';
 }
 
-function foxycart_perm() {
+function foxycart_permission() {
   return array('access administration pages');
 }
 
@@ -313,7 +325,7 @@ function foxycart_admin_settings() {
   global $base_root;
   $path = drupal_get_path('module', 'foxycart');
 
-  $logolink = theme('image', $path . '/powered-by-foxycart-108x46.png', 'Powered by FoxyCart Ecommerce', 'Powered by FoxyCart Ecommerce');
+  $logolink = theme('image', array('path' =>  $path . '/powered-by-foxycart-108x46.png', 'alt' => t('Powered by FoxyCart Ecommerce'), 'title' => t('Powered by FoxyCart Ecommerce')));
   
   $form['access'] = array(
 	'#type' => 'fieldset',
