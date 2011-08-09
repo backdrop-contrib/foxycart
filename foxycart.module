@@ -1,12 +1,13 @@
 <?php
 
+// $Id$ 
 
 /**
  * @file foxycart.module
  *
  * Module to provide integration of Drupal and FoxyCart.
  *
- * Copyright (c) 2010 Jason York -  http://www.yorkspace.com
+ * Copyright (c) 2011 Jason York -  http://www.yorkspace.com
  *
  */
 
@@ -17,11 +18,15 @@ function foxycart_init() {
   if (strlen($foxycart_yourdomain)) {
 
     /* Include the required Javascript and CSS from foxycart.com */
-    drupal_set_html_head('<script src="https://' . $foxycart_yourdomain . '.foxycart.com/files/foxycart_includes.js" type="text/javascript" charset="utf-8"></script>');
-    drupal_set_html_head('<link rel="stylesheet" href="https://' . $foxycart_yourdomain . '.foxycart.com/files/foxybox.css" type="text/css" media="screen" charset="utf-8" />');
-    drupal_set_html_head('<link rel="stylesheet" href="https://' . $foxycart_yourdomain . '.foxycart.com/themes/standard/theme.foxybox.css" type="text/css" media="screen" charset="utf-8" />');
-    drupal_add_js(drupal_get_path('module', 'foxycart') .'/foxycart.js');
-    drupal_add_css(drupal_get_path('module', 'foxycart') .'/foxycart.css');
+  	drupal_add_js('https://' . $foxycart_yourdomain . '.foxycart.com/files/foxycart_includes.js', 'external');
+  	drupal_add_js(drupal_get_path('module', 'foxycart') .'/foxycart.js');
+
+  	drupal_add_css(drupal_get_path('module', 'foxycart') .'/foxycart.css');
+  	drupal_add_css('https://' . $foxycart_yourdomain . '.foxycart.com/files/foxybox.css', array('type' => 'external'));
+  	drupal_add_css('https://' . $foxycart_yourdomain . '.foxycart.com/themes/standard/theme.foxybox.css', array('type' => 'external'));
+  	
+  	
+  	 
   }
 }
 
@@ -64,7 +69,7 @@ function foxycart_menu() {
  	'type' => MENU_CALLBACK,
 	'description' => 'Process Foxycart SSO',
 	'page callback' => 'foxycart_process_sso', 
-	'access callback' => TRUE);
+	'access arguments' => array(1));
 
   // Used during development to test the datafeed functionality
 //    $items['admin/foxycart/datafeedtest'] = array(
@@ -86,35 +91,35 @@ function foxycart_help($path, $arg) {
   }
 }
 
-function foxycart_theme() {
+function foxycart_theme($existing, $type, $theme, $path) {
   return array(
-    'foxycart_full_cart_block' => array(
-	  'arguments' => array('fc_domain' => foxycart_get_domain(),
+    'foxycart_summary_cart_block' => array(
+	  'variables' => array('fc_domain' => foxycart_get_domain()),
+      'template' => 'foxycart-summary-cart-block'
+      )
+      ,'foxycart_full_cart_block' => array(
+	  'variables' => array('fc_domain' => foxycart_get_domain(),
                            'logo'      => ''),
       'template' => 'foxycart-full-cart-block'
-      ),
-    'foxycart_summary_cart_block' => array(
-	  'arguments' => array('fc_domain' => foxycart_get_domain()),
-      'template' => 'foxycart-summary-cart-block'
-      ),
-      );
+      )
+   );
 }
 
 function foxycart_get_full_cart_block() {
   global $base_root;
-
+  
   $foxycart_domain = foxycart_get_domain();
   $path = drupal_get_path('module', 'foxycart');
   if (variable_get('foxycart_show_logo', false))
   {
-    $fc_link = fclink(theme('image', $path . '/powered-by-foxycart-80x15.png', 'Powered by FoxyCart Ecommerce', 'Powered by FoxyCart Ecommerce', array('id' => 'fc_full_cart_logo')));
+  	$fc_link = fclink(theme('image', array('path' =>  $path . '/powered-by-foxycart-80x15.png', 'alt' => t('Powered by FoxyCart Ecommerce'), 'title' => t('Powered by FoxyCart Ecommerce'), 'id' => 'fc_full_cart_logo')));
   }
   else
   {
     $fc_link = "";
   }
 
-  return theme('foxycart_full_cart_block', foxycart_get_domain(), $fc_link);
+  return theme('foxycart_full_cart_block', array('fc_domain' => foxycart_get_domain(), 'logo' => $fc_link));
 }
 
 function foxycart_get_domain() {
@@ -125,28 +130,37 @@ function foxycart_get_datafeedkey() {
   return variable_get('foxycart_datafeedkey', '');
 }
 
-function foxycart_block($op = 'list', $delta = 0, $edit = array()) {
-  switch ($op) {
-    case 'list':
-      $blocks = array();
-      $blocks[0]['info'] = 'FoxyCart: Cart Summary';
-      $blocks[1]['info'] = 'FoxyCart: Full Cart';
-      return $blocks;
+/**
+* Implements hook_block_info().
+*/
+function foxycart_block_info() {
+	$blocks = array();
+    $blocks[0]['info'] = 'FoxyCart: Cart Summary';
+    $blocks[1]['info'] = 'FoxyCart: Full Cart';
+	
+	return $blocks;
+}
 
-    case 'view':
-      switch ($delta) {
-        case 0:
-          // FoxyCart: Cart Summary
-          $block['subject'] = ''; // Title is displayed in the content so it can be hidden
-          $block['content'] = theme('foxycart_summary_cart_block', foxycart_get_domain());
-          return $block;
-        case 1:
-          // FoxyCart: Full Cart
-          $block['subject'] = '';
-          $block['content'] = foxycart_get_full_cart_block();
-          return $block;
-      }
-  }
+/**
+* Implements hook_block_view().
+*/
+function foxycart_block_view($delta = 0) {
+	$block = array();
+	switch ($delta) {
+		case 0:
+			// FoxyCart: Cart Summary
+			$block['subject'] = ''; // Title is displayed in the content so it can be hidden
+			$block['content'] = theme('foxycart_summary_cart_block', array('fc_domain' => foxycart_get_domain()));
+			break;
+		case 1:
+			// FoxyCart: Full Cart
+			$block['subject'] = '';
+			$block['content'] = foxycart_get_full_cart_block();
+			break;
+	}
+	
+	return $block;
+	
 }
 
 /* Process the datafeed supplied by FoxyCart.com after an order is processed
@@ -203,21 +217,21 @@ function foxycart_api_getuser($email) {
   return $output;
 }
 
+
 /* Used to synchronize user accounts with FoxyCart.com when a user account is updated */
-function foxycart_user($op, &$edit, &$account, $category = NULL) {
-  if ( variable_get('foxycart_user_sync', false) == true	) {
-    switch ($op) {
-      case 'submit':
-        $foxyresponse = foxycart_api_update_user($account->mail, $account->pass);
-        if ($foxyresponse->result == 'SUCCESS') {
-          $edit['fc_customer_id'] = (integer)$foxyresponse->customer_id;
-          user_save($account, $edit, $category);
-        }
-        break;
+function foxycart_user_update(&$edit, $account, $category) {
+  if ( (variable_get('foxycart_user_sync', false) == true)
+  && (variable_get('foxycart_enable_sso', false) == true)	) {
+	$foxyresponse = foxycart_api_update_user($account->mail, $account->pass);
+    if ($foxyresponse->result == 'SUCCESS') {
+    	$edit['fc_customer_id'] = (integer)$foxyresponse->customer_id;
+        user_save($account, $edit, $category);
     }
   }
   return NULL;
+
 }
+
 
 function foxycart_api_update_user($email, $pass) {
   $output = "";
@@ -252,6 +266,7 @@ function foxycart_process_sso() {
   global $base_root;
   global $user;
 
+  $sso_enabled = variable_get('foxycart_enable_sso', false);
   $user_is_authenticated = true;
   $foxycart_api_key = foxycart_get_datafeedkey();
   $foxycart_domain = foxycart_get_domain();
@@ -266,7 +281,7 @@ function foxycart_process_sso() {
   // URL for non_auth checkout
   $full_redirect = $base_root . '/user';
 
-  if (isset($_REQUEST['timestamp']) && isset($_REQUEST['fcsid'])) {
+  if ($sso_enabled && isset($_REQUEST['timestamp']) && isset($_REQUEST['fcsid'])) {
     $fcsid = $_REQUEST['fcsid'];
     $timestamp = $_REQUEST['timestamp'] + (60 * 30); // valid for 30 minutes;
 
@@ -302,23 +317,15 @@ function fclink($text = 'FoxyCart') {
   return '<a href="http://affiliate.foxycart.com/idevaffiliate.php?id=165">' . $text .'</a>';
 }
 
-function foxycart_perm() {
+function foxycart_permission() {
   return array('access administration pages');
 }
 
-function get_auth_settings_description()
-{
-  $desc = '<p><a href="http://wiki.foxycart.com/docs:single_sign_on">FoxyCart\'s SSO</a> allows you to send an authenticated user from your own site to your FoxyCart checkout without needing to re-enter their username (email address) and password. </p><p><strong>Note:</strong> You must enable "shared authentication" in the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">FoxyCart store settings</a> under the "advanced" menu. For more details, see the ' . l( t("help"), "admin/foxycart/help") . ' section.</p>';
-  if (!extension_loaded("curl")) {
-    $desc .= t('<strong>IMPORTANT NOTE</strong>: The ' . l('php_curl', 'http://php.net/manual/en/book.curl.php') . ' library must be installed to enable Single Sign-On (SSO) / shared authentication.');
-  }
-  return $desc;
-}
 function foxycart_admin_settings() {
   global $base_root;
   $path = drupal_get_path('module', 'foxycart');
 
-  $logolink = theme('image', $path . '/powered-by-foxycart-108x46.png', 'Powered by FoxyCart Ecommerce', 'Powered by FoxyCart Ecommerce');
+  $logolink = theme('image', array('path' =>  $path . '/powered-by-foxycart-108x46.png', 'alt' => t('Powered by FoxyCart Ecommerce'), 'title' => t('Powered by FoxyCart Ecommerce')));
   
   $form['access'] = array(
 	'#type' => 'fieldset',
@@ -345,8 +352,14 @@ function foxycart_admin_settings() {
 
   $form['auth'] = array(
   	'#type' => 'fieldset',
-  	'#title' => t('Authentication settings'),
-    '#description' => get_auth_settings_description());
+  	'#title' => t('Authentication settings'));
+
+  $form['auth']['foxycart_enable_sso'] = array(
+  	'#type' => 'checkbox',
+  	'#title' => t("Enable Single Sign-On (SSO) / shared authentication"),
+  	'#default_value' => variable_get('foxycart_enable_sso', false),
+  	'#description' => '<a href="http://wiki.foxycart.com/docs:single_sign_on">FoxyCart\'s SSO</a> allows you to send an authenticated user from your own site to your FoxyCart checkout without needing to re-enter their username (email address) and password. <br/><strong>Note:</strong> You must enable "shared authentication" in the <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">FoxyCart store settings</a> under the "advanced" menu',
+  	'#required' => FALSE);	
 
   $form['auth']['foxycart_user_sync'] = array(
   	'#type' => 'checkbox',
@@ -357,9 +370,9 @@ function foxycart_admin_settings() {
 
   $form['auth']['foxycart_allow_non_auth_checkout'] = array(
   	'#type' => 'checkbox',
-  	'#title' => t("Allow SSO unauthenticated checkout"),
+  	'#title' => t("Allow unauthenticated checkout"),
   	'#default_value' => variable_get('foxycart_allow_non_auth_checkout', true),
-  	'#description' => t('If SSO is being used and the user is not logged in, do you still want to allow them to proceed to checkout?'),
+  	'#description' => t('If the user is not logged in, do you still want to allow them to proceed to checkout?'),
   	'#required' => FALSE);	
 
   $form['display'] = array(
@@ -377,8 +390,13 @@ function foxycart_admin_settings() {
 }
 
 function foxycart_admin_settings_validate($form, &$form_state) {
-  if (($form_state['values']['foxycart_user_sync'] == true) && (!extension_loaded("curl"))) {
-    form_set_error('', t("The php_curl library must be installed to enable user sync."));
+  if ($form_state['values']['foxycart_enable_sso'] == false
+  && ($form_state['values']['foxycart_user_sync'] == true || $form_state['values']['foxycart_allow_non_auth_checkout'] == true)) {
+    form_set_error('', t('Single Sign-On must be enabled for User Sync or Non Auth Checkout'));
+  }
+
+  if (($form_state['values']['foxycart_enable_sso'] == true) && (!extension_loaded("curl"))) {
+    form_set_error('', t("The php_curl library must be installed to enable Single Sign-On (SSO) / shared authentication."));
   }
 }
 
