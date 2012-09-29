@@ -1,8 +1,8 @@
 
+/* $Id$ */ 
 
 #fc_full_cart_logo
 {
-	float: right;
 	display: block;
 	vertical-align: text-bottom;
 	padding-top: 5px;
@@ -14,4 +14,14 @@
 	display: block;
 	vertical-align: text-bottom;
 	padding-right: 10px;
+}
+
+#fc_cart_contents, .fc_cart_link {
+	display: none;
+}
+
+#fc_cart_message, #fc_minicart_empty {
+	font-style: italic;
+	color: #888;
+	line-height: 28px;
 }

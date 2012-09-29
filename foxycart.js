@@ -1,32 +1,84 @@
+// $Id$ 
 
+(function($) {
 
-function fc_BuildFoxyCart() {
-        fc_FoxyCart = "";
-    	if (fc_json.products.length > 0)
-        {
-        	for (i=0;i<fc_json.products.length;i++) {
-                fc_BuildFoxyCartRow(fc_json.products[i].name,fc_json.products[i].code,fc_json.products[i].options,fc_json.products[i].quantity,fc_json.products[i].price_each,fc_json.products[i].price);
-	        }        
-        }
-        
-        // fc_FoxyCart is a javascript variable that now holds your shopping cart data
- 
-        // if you have some products in your cart, why not display it?
-        if (fc_json.products.length > 0) {
-                $("#fc_cart #cart_content").html(fc_FoxyCart);
-        } else {
-                $("#fc_cart #cart_content").html("");
-        }
+	fcc.events.cart.postprocess = new FC.client.event();
+	fcc.events.cart.postprocess.add(function(){
+		fcc.cart_update();
+		return "pause";
+	});
+	fcc.events.cart.postprocess.add(function(){
+		buildFullCart(FC.json.products);
+	});
+	fcc.events.cart.ready.add(function() {
+		if (FC.json.products) {
+			buildFullCart(FC.json.products);
+		}
+	});
+	
+	FC.client.prototype.cart_update = function() {
+		var self = this;
+		jQuery.getJSON('https://' + this.storedomain + '/cart.php?cart=get&output=json' + this.session_get() + '&callback=?', function(data) {
+			FC.json = data;
+			if ( ! self.session_initialized == true) {
+				self.session_initialized = true;
+				FC.session_id = data.session_id;
+				self.session_set();
+				self.session_get();
+			}
+	
+			// "Minicart" Helpers
+			if (FC.json.product_count > 0) {
+				jQuery("#fc_minicart, .fc_minicart").show();  
+				jQuery("#fc_minicart_empty, .fc_minicart_empty").hide();  
+			} else {
+				jQuery("#fc_minicart, .fc_minicart").hide();
+				jQuery("#fc_minicart_empty, .fc_minicart_empty").show();  
+			}
+			// update values
+			jQuery("#fc_quantity, .fc_quantity").html("" + FC.json.product_count);
+			jQuery("#fc_total_price, .fc_total_price").html("" + self._currency_format(FC.json.total_price));
+			// Execute the ready event on intial pageload, if it's defined
+			if (self.events.cart.ready.counter == 0) {
+				self.events.cart.ready.execute();
+			} else {
+				self.events.cart.postprocess.resume();
+			}
+		});
+	};
+
+})(jQuery);
+
+function buildFullCart(products) {
+	$ = jQuery;
+	var cart = "";
+	if (products.length > 0) {
+		for (i = 0; i < products.length; i++) {
+			cart += buildCartRow(products[i].name,
+					products[i].code, 
+					products[i].options,
+					products[i].quantity,
+					products[i].price_each, 
+					products[i].price);
+		}
+		$("#fc_cart_contents").show();
+		$("#fc_cart_items").html(cart);
+		$("#fc_cart_message").html("");
+		$(".fc_cart_link").show();
+	} else {
+		$("#fc_cart_contents").hide();
+		$(".fc_cart_link").hide();
+		$("#fc_cart_message").html("Your shopping cart is empty");
+	}
 }
+
 // This function is called by fc_BuildFoxyCart() for each product in your cart.
-// Feel free to edit this function as needed to display each row of your cart.
-function fc_BuildFoxyCartRow(fc_name,fc_code,fc_options,fc_quantity,fc_price_each,fc_price) {
-        fc_FoxyCart += "<tr>";
-        fc_FoxyCart += "<td>" + fc_name + "</td>";
-//      fc_FoxyCart += "<td>" + fc_options + "</td>";
-//      fc_FoxyCart += "<td>" + fc_code + "</td>";
-        fc_FoxyCart += "<td class=\"right-align\">" + fc_quantity + "</td>";
-//      fc_FoxyCart += "<td>" + fc_price_each + "</td>";
-        fc_FoxyCart += "<td class=\"right-align\">" + fc_price.toFixed(2) + "</td>";
-        fc_FoxyCart += "</tr>";
+function buildCartRow(fc_name, fc_code, fc_options, fc_quantity,
+		fc_price_each, fc_price) {
+	var cart = "<tr>";
+	cart += "<td>" + fc_name + "</td>";
+	cart += "<td class=\"right-align\">" + fc_quantity + "</td>";
+	cart += "<td class=\"right-align\">" + fc_price.toFixed(2) + "</td>";
+	cart += "</tr>";
+	return cart;
 }

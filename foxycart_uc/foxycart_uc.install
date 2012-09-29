@@ -1,0 +1,41 @@
+<?php
+
+// $Id$
+
+/**
+ * @file foxycart_uc.install
+ *
+ * Integrates FoxyCart with Drupal.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features.
+ *
+ * Copyright (c) 2012 Jason York
+ *
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+ function foxycart_uc_uninstall() {
+}
+
+
+function foxycart_uc_requirements($phase) {
+	if ($phase == 'runtime' || $phase == 'install') {
+		
+		if (module_exists('uc_cart') ){
+			$description = t("The \"Ubercart Cart\" module is not compatible with \"FoxyCart UC Cart Alternative\".  You must disable one of them");
+			$severity = REQUIREMENT_ERROR;
+			$value = t('Conflict');
+			
+		    $requirements['foxycart_uc'] = array(
+		      'title' => t("Module Compatiblity"),
+		      'severity' => $severity,
+		      'value' => $value,
+		      'description' => $description,
+		    );
+			return $requirements;
+		}		
+
+	}
+}
+
+?>

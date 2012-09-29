@@ -1,5 +1,6 @@
 <?php
 
+// $Id$
 
 /**
  * @file foxycart.install
@@ -11,15 +12,45 @@
  */
 
 /**
+ * Implementation of hook_requirements
+ */
+function foxycart_requirements($phase) {
+	if ($phase == 'runtime' || $phase == 'install') {
+		
+		if (!extension_loaded("curl")) {
+			$description = t("The PHP CURL extension must be enabled for module \"FoxyCart\" to work correctly. See the <a href=\"http://www.php.net/manual/intro.curl.php\">PHP Manual</a> for more info.");
+			$severity = REQUIREMENT_ERROR;
+			$value = t('Not Enabled');
+		} else {
+			$description = "";
+			$severity = REQUIREMENT_OK;
+			$value = t('Enabled');
+		}
+
+	    $requirements['foxycart'] = array(
+	      'title' => t("CURL Extension"),
+	      'severity' => $severity,
+	      'value' => $value,
+	      'description' => $description,
+	    );
+
+		return $requirements;
+	}
+}
+
+/**
  * Implementation of hook_uninstall().
  */
  function foxycart_uninstall() {
   variable_del('foxycart_yourdomain');
+  variable_del('foxycart_subdomain');
   variable_del('foxycart_show_logo');
   variable_del('foxycart_datafeedkey');
+  variable_del('foxycart_apikey');
   variable_del('foxycart_user_sync');
   variable_del('foxycart_enable_sso');
   variable_del('foxycart_allow_non_auth_checkout');
 }
+
 
 ?>
