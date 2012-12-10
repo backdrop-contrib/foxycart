@@ -153,7 +153,7 @@ function foxycart_get_domain() {
 function foxycart_get_apikey() {
 	$key = variable_get('foxycart_apikey', '');
 	if ($key == '') {
-		$key = "fpac".hash_hmac('sha256',rand(1000,65535),"soi42".time());
+		$key = "fx5pl9".hash_hmac('sha256',rand(1000,65535),"soi42".time());
 		variable_set('foxycart_apikey', $key);
 		$test = variable_get('foxycart_apikey', '');
 	}

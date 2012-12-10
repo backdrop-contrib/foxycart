@@ -1,8 +1,9 @@
 
 ; $Id$ 
 
-name = FoxyCart UC Cart Alternative
-description = Integrates <a href="http://affiliate.foxycart.com/idevaffiliate.php?id=165">FoxyCart</a> with Drupal.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features. 
+name = FoxyPal UC Cart Alternative
+package = FoxyPal
+description = Integrates FoxyCart with Drupal and Ubercart.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features. 
 dependencies[] = foxycart
 dependencies[] = uc_store
 dependencies[] = uc_product

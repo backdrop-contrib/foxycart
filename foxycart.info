@@ -1,7 +1,8 @@
 
 ; $Id$ 
 
-name = FoxyCart
-description = Provides integration of <a href="http://affiliate.foxycart.com/idevaffiliate.php?id=165">FoxyCart</a> with Drupal
+name = FoxyPal
+package = FoxyPal
+description = Provides integration of FoxyCart with Drupal
 core = 7.x
 
