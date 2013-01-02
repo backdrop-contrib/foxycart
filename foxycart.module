@@ -198,12 +198,15 @@ function foxycart_datafeed() {
 
 	foxycart_log("datafeed: Starting");
 	if (isset($_POST['FoxyData'])) {
+		foxycart_log("datafeed: Got FoxyData");
 		try {
 			$XMLOutput_decrypted = urldecode($_POST["FoxyData"]);
 			$XMLOutput_decrypted = foxycart_decrypt_rc4(foxycart_get_apikey(),$XMLOutput_decrypted);
 			$data = simplexml_load_string($XMLOutput_decrypted, 'SimpleXMLElement', LIBXML_NOCDATA);
-
+			foxycart_log(print_r($data, true));
 			if (is_object($data)) {
+				foxycart_log("datafeed: Got data");
+
 				foreach ($data->transactions[0] as $transaction) {
 					foxycart_log("datafeed: Processing transaction");
 						

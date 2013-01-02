@@ -7,7 +7,7 @@ function foxycart_uc_view_datafeed ($order) {
 		return '';
 }
 
-function foxycart_uc_df_add_product_to_order($order, $transaction_detail) {
+function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 
 	$product->order_id = $order->order_id;
 	$product->title = (string)$transaction_detail->product_name;
@@ -31,7 +31,7 @@ function foxycart_uc_df_add_product_to_order($order, $transaction_detail) {
 			$option[title] = (string)$transaction_detail->product_name . ' - ' 
 				. (string)$transaction_detail_option->product_option_name . ": "
 				. (string)$transaction_detail_option->product_option_value;
-			$option[qty] = 1;
+			$option[qty] = $product->qty;
 			$option[model] = (string)$transaction_detail->product_code;
 			$option[price] = (float)$transaction_detail_option->price_mod;
 			$option[weight] = (float)$transaction_detail_option->weight_mod;
@@ -41,19 +41,29 @@ function foxycart_uc_df_add_product_to_order($order, $transaction_detail) {
 	}
 }
 
-function foxycart_uc_df_add_payment_to_order($order, $transaction) {
-	$payment = "PAYMENT: ";
-	$payment .= (string)$transaction->cc_type . ' ' . (string)$transaction->cc_number_masked;
-	$payment .= " EXP: " . (string)$transaction->cc_exp_month . '/' . (string)$transaction->cc_exp_year;
-	$payment .=" RESPONSE: " . (string)$transaction->processor_response; 
-	uc_order_comment_save($order->order_id, $order->uid, $payment, 'admin');
+function foxycart_uc_df_add_payment_to_order(&$order, $transaction) {
+ 
+  	uc_order_save($order);
+  	uc_payment_enter($order->order_id
+  		,isset($transaction->payment_gateway_type) ? (string)$transaction->payment_gateway_type : 'Other'
+  		,(float)$transaction->order_total, 
+  		$order->uid, $data = NULL, (string)$transaction->processor_response
+  		,strtotime((string)$transaction->transaction_date)	);
+ 	
+	uc_order_comment_save($order->order_id, $order->uid, $payment, 'order', 'payment_received');
+	uc_order_save($order);
+	if (uc_order_update_status($order->order_id, 'payment_received')) {
+    	$order->order_status = 'payment_received';
+  	}	
 	
 }
 
-function foxycart_uc_df_add_shipping_to_order($order, $transaction) {
-	$shipping = "SHIPPING: ";
-	$shipping .= (string)$transaction->shipto_shipping_service_description;
-	uc_order_comment_save($order->order_id, $order->uid, $shipping, 'admin');
+function foxycart_uc_df_add_shipping_to_order(&$order, $transaction) {
+	if (isset($transaction->shipto_shipping_service_description) && (string)$transaction->shipto_shipping_service_description != '') {
+		$shipping = "SHIPPING: ";
+		$shipping .= (string)$transaction->shipto_shipping_service_description;
+		uc_order_comment_save($order->order_id, $order->uid, $shipping, 'order');
+	}
 }
 
 
@@ -120,6 +130,7 @@ function foxycart_uc_df_create_order($transaction) {
 	
 	uc_order_save($order);
 	$order = uc_order_load($order->order_id);
+
 	return $order;
 }
 ?>

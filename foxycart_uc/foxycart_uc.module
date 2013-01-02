@@ -30,6 +30,11 @@ function foxycart_uc_menu() {
 	return $items;	
 }
 
+function uc_cart_complete_sale($order, $login = FALSE) {
+	// Stub for Ubercart's function.  This is called by uc_payment_enter
+}
+
+
 function foxycart_uc_get_zone_id($zone_code) {
 	// Ubercart currently doesn't provide a way to get the zone_id based on zone code.  This is to fill that need
 
@@ -87,18 +92,32 @@ function foxycart_uc_node_view($node, $view_mode, $langcode) {
 
 
 function foxycart_uc_form_alter(&$form, $form_state, $form_id) {
+	if ($form_id == 'uc_product_add_to_cart_form'  ) {
 
-	if ($form_id == 'uc_product_add_to_cart_form') {
 		$node =& $form['node']['#value'];
 		$options = foxycart_uc_get_product_option_fields($node);
-		
-		$form['fc_attributes'] = Array(
-								'#type' => 'fieldset',
-								'#title' => t('Options'),
-		);
-		$form['fc_attributes'] = array_merge($form['fc_attributes'], $options);
-		
+		if (count($options)) {
+			$form['fc_attributes'] = Array(
+									'#type' => 'fieldset',
+									'#title' => t('Options'),
+			);
+			$form['fc_attributes'] = array_merge($form['fc_attributes'], $options);
+		}			
 	}
+	if (strpos($form_id, 'uc_catalog_buy_it_now_form') !== FALSE ) {
+ 		
+		$node =& $form['node']['#value'];
+		$options = foxycart_uc_get_product_option_fields($node);
+		if (count($options)) {
+			$form['fc_attributes'] = Array(
+									'#type' => 'fieldset',
+									'#title' => t('Options'),
+			);
+			$form['fc_attributes'] = array_merge($form['fc_attributes'], $options);
+		}
+		//print "<Pre>"; print_r($form); print "</pre>"; exit;
+		foxycart_uc_modify_cart_form($form);		
+ 	}
 }
 
 
@@ -106,7 +125,7 @@ function foxycart_uc_get_product_option_fields(&$product) {
 
 	// If the product doesn't have attributes, return the form as it is.
   if (empty($product->attributes) || !is_array($product->attributes)) {
-    return NULL;
+    return array();
   }
 
   $nid = $product->nid;
@@ -235,6 +254,18 @@ function foxycart_uc_module_implements_alter(&$implementations, $hook) {
 	}
 }
 
+
+function foxycart_uc_add_product_categories(&$node, &$form) {
+	if (isset($node->taxonomy_catalog) && isset($node->taxonomy_catalog[$node->language])) {
+		foreach ($node->taxonomy_catalog[$node->language] as $delta => $value) {
+	  		$term = taxonomy_term_load($value['tid']);
+		}
+		if (isset($term->name)) {	
+			$form[foxycart_get_product_attribute($node->model, 'category', $term->name)] = array('#type' => 'hidden', '#value' => $term->name);
+		}
+	}
+}
+
 /**
  * Form to add the $node product to the cart.
  *
@@ -246,59 +277,67 @@ function foxycart_uc_module_implements_alter(&$implementations, $hook) {
  * @ingroup forms
  */
 function foxycart_uc_uc_form_alter(&$form, &$form_state, $form_id) {
-	if (strpos($form_id, 'add_to_cart_form')) {
+	if (strpos($form_id, 'add_to_cart_form') ) {
+		return foxycart_uc_modify_cart_form($form);
+	}
+}
+function foxycart_uc_modify_cart_form(&$form) {
 
-		$form['#action'] = 'https://' . foxycart_get_domain() . '.foxycart.com/cart';
-		unset($form['form_build_id']);
-		unset($form['form_token']);
-		unset($form['form_id']);
-		$form['#token'] = FALSE;
-		
-		$node =& $form['node']['#value'];
-		
-		if ($node->default_qty > 0 && variable_get('uc_product_add_to_cart_qty', FALSE)) {
-			$form[foxycart_get_product_attribute($node->model, 'quantity', '--OPEN--')] = array(
-		      '#type' => 'text',
-		      '#title' => t('Quantity'),
-		      '#default_value' => $node->default_qty,
-			);
-		}
-		else {
-			$form[foxycart_get_product_attribute($node->model, 'quantity', $node->default_qty ? $node->default_qty : 1)]
-			= array('#type' => 'hidden', '#value' => $node->default_qty ? $node->default_qty : 1);
-		}
+	$form['#action'] = 'https://' . foxycart_get_domain() . '.foxycart.com/cart';
+	unset($form['form_build_id']);
+	unset($form['form_token']);
+	unset($form['form_id']);
+	$form['#token'] = FALSE;
 	
+	$node =& $form['node']['#value'];
+	if (!is_object($node)) {
+		$node = node_load($form['nid']['#value']);
+		unset($form['nid']);
+	}
 	
-		$form[foxycart_get_product_attribute($node->model, 'code', $node->model)] = array('#type' => 'hidden', '#value' => $node->model);
-		$form['name'] = array('#type' => 'hidden', '#value' => foxycart_get_product_attribute($node->model, 'name', $node->title, 'value'));
-		$form[foxycart_get_product_attribute($node->model, 'price', $node->price)] = array('#type' => 'hidden', '#value' => $node->price);
-		
-		if (isset($node->uc_product_image["und"][0]["uri"])) {
-			$img_url = image_style_url('thumbnail', $node->uc_product_image["und"][0]["uri"]);
-			$form[foxycart_get_product_attribute($node->model, 'image', $img_url)] = array('#type' => 'hidden', '#value' => $img_url);
-			
-		}
-	
-		$form[foxycart_get_product_attribute($node->model, 'url', url('node/' . $node->nid, array('absolute'=>true)))] = array('#type' => 'hidden', '#value' => url('node/' . $node->nid, array('absolute'=>true)));
-		$form[foxycart_get_product_attribute($node->model, 'weight', $node->weight)] = array('#type' => 'hidden', '#value' => $node->weight);
-		$form[foxycart_get_product_attribute($node->model, 'nid', $node->nid)] = array('#type' => 'hidden', '#value' => $node->nid);
-	
-	
-		$form['actions'] = array('#type' => 'actions');
-		$form['actions']['submit'] = array(
-		    '#type' => 'submit',
-		    '#value' => t('Add to cart'),
-		    '#id' => 'edit-submit-' . $node->nid,
-		    '#attributes' => array(
-		      'class' => array('node-add-to-cart'),
-		),
-		);
-	
-		$form['node'] = array(
-		    '#type' => 'value',
-		    '#value' => $node,
+	if ($node->default_qty > 0 && variable_get('uc_product_add_to_cart_qty', FALSE)) {
+		$form[foxycart_get_product_attribute($node->model, 'quantity', '--OPEN--')] = array(
+	      '#type' => 'text',
+	      '#title' => t('Quantity'),
+	      '#default_value' => $node->default_qty,
 		);
 	}
+	else {
+		$form[foxycart_get_product_attribute($node->model, 'quantity', $node->default_qty ? $node->default_qty : 1)]
+		= array('#type' => 'hidden', '#value' => $node->default_qty ? $node->default_qty : 1);
+	}
+
+
+	$form[foxycart_get_product_attribute($node->model, 'code', $node->model)] = array('#type' => 'hidden', '#value' => $node->model);
+	$form['name'] = array('#type' => 'hidden', '#value' => foxycart_get_product_attribute($node->model, 'name', $node->title, 'value'));
+	$form[foxycart_get_product_attribute($node->model, 'price', $node->price)] = array('#type' => 'hidden', '#value' => $node->price);
+	
+	if (isset($node->uc_product_image["und"][0]["uri"])) {
+		$img_url = image_style_url('thumbnail', $node->uc_product_image["und"][0]["uri"]);
+		$form[foxycart_get_product_attribute($node->model, 'image', $img_url)] = array('#type' => 'hidden', '#value' => $img_url);
+		
+	}
+
+	$form[foxycart_get_product_attribute($node->model, 'url', url('node/' . $node->nid, array('absolute'=>true)))] = array('#type' => 'hidden', '#value' => url('node/' . $node->nid, array('absolute'=>true)));
+	$form[foxycart_get_product_attribute($node->model, 'weight', $node->weight)] = array('#type' => 'hidden', '#value' => $node->weight);
+	$form[foxycart_get_product_attribute($node->model, 'nid', $node->nid)] = array('#type' => 'hidden', '#value' => $node->nid);
+	foxycart_uc_add_product_categories($node, $form);
+
+	$form['actions'] = array('#type' => 'actions');
+	$form['actions']['submit'] = array(
+	    '#type' => 'submit',
+	    '#value' => t('Add to cart'),
+	    '#id' => 'edit-submit-' . $node->nid,
+	    '#attributes' => array(
+	      'class' => array('node-add-to-cart'),
+	),
+	);
+
+	$form['node'] = array(
+	    '#type' => 'value',
+	    '#value' => $node,
+	);
+
 }
 
 
