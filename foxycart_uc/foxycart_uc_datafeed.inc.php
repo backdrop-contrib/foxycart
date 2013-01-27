@@ -8,20 +8,20 @@ function foxycart_uc_view_datafeed ($order) {
 }
 
 function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
-
+	
 	$product->order_id = $order->order_id;
 	$product->title = (string)$transaction_detail->product_name;
 	$product->model = (string)$transaction_detail->product_code;
 	$product->qty = (int)$transaction_detail->product_quantity;
 	$product->price = (float)$transaction_detail->product_price;
 	$product->weight = (float)$transaction_detail->product_weight;
-	// $product->weight_units = 
 	
-	$order->products[] = $product;
+	$order->products[] = $product;	
 	
 	// In foxycart a line item on an order can have multiple product detail options.
 	// Ubercart currently does not have a way to represent these, so we flatten them out
 	// into additional products on the order
+	foxycart_log("Found " . count($transaction_detail->transaction_detail_options[0]) . " transaction detail options.");
 	foreach ($transaction_detail->transaction_detail_options[0] as $transaction_detail_option) {
 		if ($transaction_detail_option->product_option_name == 'nid') {
 			$product->nid = (int)$transaction_detail_option->product_option_value;
@@ -36,6 +36,7 @@ function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 			$option[price] = (float)$transaction_detail_option->price_mod;
 			$option[weight] = (float)$transaction_detail_option->weight_mod;
 
+			foxycart_log("Added detail option: " . $option[title]);
 			$order->products[] = $option;
 		}
 	}
@@ -115,10 +116,6 @@ function foxycart_uc_df_create_order($transaction) {
 		$order->billing_country = $country_result[0]->country_id;
 	}
 	
-	foreach ($transaction->transaction_details[0] as $transaction_detail) {
-		foxycart_uc_df_add_product_to_order($order, $transaction_detail);
-	}
-
 	uc_order_line_item_add($order->order_id, 'product_total', 'Product Total', (float)$transaction->product_total);
 	uc_order_line_item_add($order->order_id, 'generic', 'Tax Total', (float)$transaction->tax_total);
 	uc_order_line_item_add($order->order_id, 'generic', 'Shipping Total', (float)$transaction->shipping_total);
@@ -128,6 +125,13 @@ function foxycart_uc_df_create_order($transaction) {
 	foxycart_uc_df_add_payment_to_order($order, $transaction);
 	foxycart_uc_df_add_shipping_to_order($order, $transaction);
 	
+	// It seems that every time you save the order, it will duplicate products.
+	// adding the payment to the order calls save_order twice, so we add the products
+	// after the payment is added
+	foreach ($transaction->transaction_details[0] as $transaction_detail) {
+		foxycart_uc_df_add_product_to_order($order, $transaction_detail);
+	}
+
 	uc_order_save($order);
 	$order = uc_order_load($order->order_id);
 
