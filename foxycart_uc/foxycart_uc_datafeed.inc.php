@@ -27,16 +27,16 @@ function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 			$product->nid = (int)$transaction_detail_option->product_option_value;
 		} else {
 			$option = array();
-			$option[order_id] = $order->order_id;
-			$option[title] = (string)$transaction_detail->product_name . ' - ' 
+			$option["order_id"] = $order->order_id;
+			$option["title"] = (string)$transaction_detail->product_name . ' - ' 
 				. (string)$transaction_detail_option->product_option_name . ": "
 				. (string)$transaction_detail_option->product_option_value;
-			$option[qty] = $product->qty;
-			$option[model] = (string)$transaction_detail->product_code;
-			$option[price] = (float)$transaction_detail_option->price_mod;
-			$option[weight] = (float)$transaction_detail_option->weight_mod;
+			$option["qty"] = $product->qty;
+			$option["model"] = (string)$transaction_detail->product_code;
+			$option["price"] = (float)$transaction_detail_option->price_mod;
+			$option["weight"] = (float)$transaction_detail_option->weight_mod;
 
-			foxycart_log("Added detail option: " . $option[title]);
+			foxycart_log("Added detail option: " . $option["title"]);
 			$order->products[] = $option;
 		}
 	}
@@ -44,14 +44,15 @@ function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 
 function foxycart_uc_df_add_payment_to_order(&$order, $transaction) {
  
-  	uc_order_save($order);
-  	uc_payment_enter($order->order_id
-  		,isset($transaction->payment_gateway_type) ? (string)$transaction->payment_gateway_type : 'Other'
-  		,(float)$transaction->order_total, 
-  		$order->uid, $data = NULL, (string)$transaction->processor_response
-  		,strtotime((string)$transaction->transaction_date)	);
- 	
-	uc_order_comment_save($order->order_id, $order->uid, $payment, 'order', 'payment_received');
+	uc_order_save($order);
+	uc_payment_enter($order->order_id,
+		isset($transaction->payment_gateway_type) ? (string)$transaction->payment_gateway_type : 'Other',
+		(float)$transaction->order_total, 
+		$order->uid, $data = NULL, (string)$transaction->processor_response,
+		strtotime((string)$transaction->transaction_date)
+	);
+
+	uc_order_comment_save($order->order_id, $order->uid, "", 'order', 'payment_received');
 	uc_order_save($order);
 	if (uc_order_update_status($order->order_id, 'payment_received')) {
     	$order->order_status = 'payment_received';
@@ -98,8 +99,9 @@ function foxycart_uc_df_create_order($transaction) {
 	$order->delivery_postal_code = (string)$transaction->shipping_postal_code;
 
 	$country_result = uc_get_country_data(Array('country_iso_code_2' => $transaction->customer_country));
-	if (count($country_result)) { 
+	if (count($country_result) && isset($country_result[0]->country_id)) { 
 		$order->delivery_country = $country_result[0]->country_id;
+		$order->billing_country  = $country_result[0]->country_id;		
 	}
 
 	$order->billing_first_name = (string)$transaction->customer_first_name;
@@ -112,9 +114,6 @@ function foxycart_uc_df_create_order($transaction) {
 	$order->billing_postal_code = (string)$transaction->customer_postal_code;
 	
 	$country_result = uc_get_country_data(Array('country_iso_code_2' => (string)$transaction->billing_country));
-	if (count($country_result)) {
-		$order->billing_country = $country_result[0]->country_id;
-	}
 	
 	uc_order_line_item_add($order->order_id, 'product_total', 'Product Total', (float)$transaction->product_total);
 	uc_order_line_item_add($order->order_id, 'generic', 'Tax Total', (float)$transaction->tax_total);

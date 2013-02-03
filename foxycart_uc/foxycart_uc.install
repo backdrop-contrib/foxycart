@@ -14,7 +14,8 @@
 /**
  * Implementation of hook_uninstall().
  */
- function foxycart_uc_uninstall() {
+function foxycart_uc_uninstall() {
+  variable_del('foxycart_uc_add_to_cart_qty'); 	
 }
 
 
@@ -37,5 +38,6 @@ function foxycart_uc_requirements($phase) {
 
 	}
 }
+
 
 ?>

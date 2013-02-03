@@ -58,9 +58,12 @@ function foxycart_uc_theme( $existing, $type, $theme, $path ) {
   );
 }
 
-function foxycart_uc_node_view( $node, $view_mode, $langcode ) {
-  if ( isset( $node->type ) && $node->type == 'product' ) {
+function foxycart_uc_is_supported_node($node) {
+  return isset( $node->type ) && ($node->type == 'product' || $node->type == 'product_kit');
+}
 
+function foxycart_uc_node_view( $node, $view_mode, $langcode ) {
+  if ( foxycart_uc_is_supported_node($node) ) {
     $variant = empty( $node->variant ) ? _uc_product_get_variant( $node ) : $node;
 
     // Build the 'add to cart' form, and use the updated variant based on data
@@ -120,6 +123,20 @@ function foxycart_uc_form_alter( &$form, $form_state, $form_id ) {
     //print "<Pre>"; print_r($form); print "</pre>"; exit;
     foxycart_uc_modify_cart_form( $form );
   }
+}
+
+function foxycart_uc_form_uc_product_settings_form_alter(&$form, &$form_state) {
+  $form['product']['foxycart_uc_add_to_cart_qty'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display an optional quantity field in the <em>Add to Cart</em> form.'),
+    '#default_value' => variable_get('foxycart_uc_add_to_cart_qty', FALSE),
+  );
+  $form['product']['foxycart_uc_update_node_view'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Update product display based on customer selections'),
+    '#default_value' => variable_get('foxycart_uc_update_node_view', FALSE),
+    '#description' => t('Check this box to dynamically update the display of product information such as display-price or weight based on customer input on the add-to-cart form (e.g. selecting a particular attribute option).'),
+  );
 }
 
 
@@ -301,18 +318,6 @@ function foxycart_uc_modify_cart_form( &$form ) {
     unset( $form['nid'] );
   }
 
-  if ( $node->default_qty > 0 && variable_get( 'uc_product_add_to_cart_qty', FALSE ) ) {
-    $form[foxycart_get_product_attribute( $node->model, 'quantity', '--OPEN--' )] = array(
-      '#type' => 'text',
-      '#title' => t( 'Quantity' ),
-      '#default_value' => $node->default_qty,
-    );
-  }
-  else {
-    $form[foxycart_get_product_attribute( $node->model, 'quantity', $node->default_qty ? $node->default_qty : 1 )]
-      = array( '#type' => 'hidden', '#value' => $node->default_qty ? $node->default_qty : 1 );
-  }
-
 
   $form[foxycart_get_product_attribute( $node->model, 'code', $node->model )] = array( '#type' => 'hidden', '#value' => $node->model );
   $form['name'] = array( '#type' => 'hidden', '#value' => foxycart_get_product_attribute( $node->model, 'name', $node->title, 'value' ) );
@@ -329,7 +334,29 @@ function foxycart_uc_modify_cart_form( &$form ) {
   $form[foxycart_get_product_attribute( $node->model, 'nid', $node->nid )] = array( '#type' => 'hidden', '#value' => $node->nid );
   foxycart_uc_add_product_categories( $node, $form );
 
-  $form['actions'] = array( '#type' => 'actions' );
+  $form['actions'] = array( 
+    '#type' => 'actions', 
+    '#attributes' => array(
+      'class' => array('container-inline' ),
+    ),      
+  );
+
+  if ( $node->default_qty > 0 && variable_get( 'foxycart_uc_add_to_cart_qty', FALSE ) ) {
+    $form['actions'][foxycart_get_product_attribute( $node->model, 'quantity', '--OPEN--' )] = array(
+      '#type' => 'textfield',
+      '#title' => t( 'Quantity' ),
+      '#default_value' => $node->default_qty,
+      '#attributes' => array(
+        'size' => array('5'),
+        ),
+      );
+  }
+  else {
+    $form['actions'][foxycart_get_product_attribute( $node->model, 'quantity', $node->default_qty ? $node->default_qty : 1 )]
+      = array( '#type' => 'hidden', '#value' => $node->default_qty ? $node->default_qty : 1 );
+  }
+
+
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t( 'Add to cart' ),
