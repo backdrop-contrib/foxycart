@@ -9,5 +9,6 @@ dependencies[] = uc_store
 dependencies[] = uc_product
 dependencies[] = uc_order
 dependencies[] = uc_payment
+files[] = tests/foxycart_uc.test
 core = 7.x
 

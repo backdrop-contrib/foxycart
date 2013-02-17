@@ -7,7 +7,7 @@
  *
  * Integrates FoxyCart with Drupal.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features.
  *
- * Copyright (c) 2012 Jason York
+ * Copyright (c) 201 Jason York
  *
  */
 

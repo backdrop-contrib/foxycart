@@ -1,0 +1,327 @@
+<?php
+
+/**
+ * @file
+ * Foxypal / Ubercart Tests
+ */
+include_once("foxycart_datafeedtest.inc.php");
+
+class FoxyCartUCTestCase extends DrupalWebTestCase {
+
+  protected $adminUser;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'FoxyCart with UberCart',
+      'description' => 'Tests the supported UberCart features with FoxyCart',
+      'group' => 'FoxyPal',
+    );
+  }
+
+  public function setUp() {
+    // Enable any module that you will need in your tests.
+    parent::setUp(array('foxycart_uc', 'foxycart', 'uc_store', 'uc_product', 'uc_order', 'uc_payment', 'uc_attribute', 'uc_product_kit', 'uc_stock', 'rules', 'rules_admin', 'uc_roles', 'devel'));
+
+    // Create a store administrator user account.
+    $this->adminUser = $this->drupalCreateUser(array(
+      'administer store',
+      'administer order workflow',
+      'administer product classes',
+      'administer product features',
+      'administer products',
+      'create product content',
+      'delete any product content',
+      'edit any product content',
+      'create orders',
+      'view all orders',
+      'edit orders',
+      'delete orders',
+      'unconditionally delete orders',
+      'administer product stock',
+      'administer rules',
+      'bypass rules access',
+      'administer attributes',
+      'administer product attributes',
+      'administer product options'
+    ));
+
+    $this->drupalLogin($this->adminUser); 
+    $this->setStockDecrementRule();
+  }
+
+
+  public function testEnableAddToCartButton() {
+    $this->drupalPost(
+      'admin/store/settings/products',
+      array('foxycart_uc_add_to_cart_qty' => TRUE),
+      t('Save configuration')
+    );
+    $this->assertFieldByName(
+      'foxycart_uc_add_to_cart_qty',
+      TRUE,
+      t('Add to cart quantity is enabled')
+    );  
+    $this->assertTrue(variable_get('foxycart_uc_add_to_cart_qty'), t('foxycart_uc_add_to_cart_qty variable set'));
+
+    $product = $this->createProduct(array('uid' => $this->adminUser->uid));
+    $this->drupalGet('node/' . $product->nid);   
+
+    $this->assertText(
+      t('SKU: @model', array('@model' => $product->model)), t('Product model found.'));
+    $this->assertText(t('Quantity'), t('Quantity Label Found.'));
+    $this->assertFieldByXPath('//div[contains(@id,"edit-actions")]//input[@type="text"]', $product->default_qty, t('Quantity input box is present')); 
+  }
+
+ /* check product options
+ * role purchase
+ */ 
+/*
+  public function testXmlDataFeedRolePurchase() {
+  }
+*/
+  public function testXmlDataFeedStandardProduct() {
+    variable_set('foxycart_user_sync', false);
+
+    $product = $this->createProduct(array('uid' => $this->adminUser->uid));
+    $attribute = self::createAttribute();
+
+    $tax = 2.06;
+    $shipping = 12.35;
+    $product_total = $product->sell_price;
+
+
+
+    $preOrderStock = uc_stock_level($product->model);
+    $productAttributes = uc_attribute_load_multiple(array(), 'product', $product->nid);
+    
+    $xml_feed = foxycart_uc_test_get_order_XML($product);
+    $xml_feed = foxycart_uc_encrypt_feed($xml_feed);
+    foxycart_datafeed(urlencode($xml_feed));
+
+    $order = $this->getLastOrder();
+    $product_adjustments = 0;
+    $productIndex = 2;
+    foreach ($productAttributes as $attribute) {
+      $this->assertEqual($order->products[$productIndex]->title, "$product->title - $attribute->name: " . $attribute->options[1]->name);
+      $this->assertEqual($order->products[$productIndex]->model, '');
+      $this->assertEqual($order->products[$productIndex]->qty, 1);
+      $this->assertEqual($order->products[$productIndex]->price, $attribute->options[1]->price);
+      $this->assertEqual($order->products[$productIndex]->weight, $attribute->options[1]->weight);
+      $productIndex++;
+      $product_adjustments += $attribute->options[1]->price;
+    }
+
+    $order_total = $product_total + $product_adjustments + $tax + $shipping;
+    $this->assertEqual($order->order_status, 'completed');
+    $this->assertEqual($order->order_total, (string)$order_total);
+    $this->assertEqual($order->product_count, 2);
+    $this->assertEqual($order->primary_email, 'test@example.com');
+    $this->assertEqual($order->data['fc_transaction_id'], 123123123);
+
+    $this->assertEqual($order->delivery_first_name, 'Test');
+    $this->assertEqual($order->delivery_last_name, 'User');
+    $this->assertEqual($order->delivery_street1, '123 Main St');
+    $this->assertEqual($order->delivery_city, 'ShippingPlace');
+    $this->assertEqual($order->delivery_zone, 2);
+    $this->assertEqual($order->delivery_postal_code, '54321');
+    $this->assertEqual($order->delivery_country, 840);
+
+    $this->assertEqual($order->billing_street1, '123 Main St');
+    $this->assertEqual($order->billing_city, 'CustomerPlace');
+    $this->assertEqual($order->billing_zone, 33);
+    $this->assertEqual($order->billing_postal_code, 12345);
+    $this->assertEqual($order->billing_country, 840);
+    
+    $this->assertEqual($order->products[1]->title, $product->title);
+    $this->assertEqual($order->products[1]->model, $product->model);
+    $this->assertEqual($order->products[1]->qty, 1);
+    $this->assertEqual($order->products[1]->price, $product->sell_price);
+    $this->assertEqual($order->products[1]->weight, $product->weight);
+
+
+
+    $this->assertEqual(count($order->line_items), 4);
+    $this->assertEqual($order->line_items[0]['type'], 'product_total');
+    $this->assertEqual($order->line_items[0]['amount'], $product_total + $product_adjustments);
+    $this->assertEqual($order->line_items[1]['type'], 'subtotal');
+    $this->assertEqual($order->line_items[1]['amount'], $product_total + $product_adjustments);
+    $this->assertEqual($order->line_items[2]['type'], 'generic');
+    $this->assertEqual($order->line_items[2]['title'], 'Tax Total');
+    $this->assertEqual($order->line_items[2]['amount'], 2.06);
+    $this->assertEqual($order->line_items[3]['type'], 'generic');
+    $this->assertEqual($order->line_items[3]['title'], 'Shipping Total');
+    $this->assertEqual($order->line_items[3]['amount'], 12.35);
+
+    $this->assertEqual(uc_stock_level($product->model), $preOrderStock - 1);
+    //file_put_contents('/tmp/test.txt', print_r($order, true));
+  }
+
+
+ function testRolePurchaseCheckout() {
+    // Add role assignment to the test product.
+    $rid = $this->drupalCreateRole(array('access content'));
+    $role = user_role_load($rid);
+    $product = $this->createProduct(array('uid' => $this->adminUser->uid));
+    
+    $this->drupalPost('node/' . $product->nid . '/edit/features', array('feature' => 'role'), t('Add'));
+    $edit = array(
+      'uc_roles_role' => $rid,
+      'end_override' => TRUE,
+      'uc_roles_expire_relative_duration' => 1,
+      'uc_roles_expire_relative_granularity' => 'day',
+    );
+    $this->drupalPost(NULL, $edit, t('Save feature'));
+
+    $xml_feed = foxycart_uc_test_get_order_XML($product, $this->adminUser);
+    $xml_feed = foxycart_uc_encrypt_feed($xml_feed);
+    foxycart_datafeed(urlencode($xml_feed));
+
+    // Test that the role was granted.
+    $account = user_load($this->adminUser->uid);
+    $this->assertTrue(isset($account->roles[$rid]), 'Existing user was granted role.');
+
+    $order = $this->getLastOrder();
+    $this->drupalGet("/admin/store/orders/$order->order_id");
+    $this->assertText('Customer granted user role');
+    $this->assertText($role->name);
+
+    // If there is another line item that role was renewed, it got added twice
+    $this->assertNoText('Customer user role');
+    $this->assertNoText('renewed');
+}
+
+
+
+  /***** Support functions ********/
+
+  function getLastOrder() {
+    $result = db_query('SELECT order_id FROM {uc_orders} order by created DESC LIMIT 1');
+    $this->assertEqual($result->rowCount(), 1);
+    return uc_order_load($result->fetchField());
+  }
+
+  function createProduct($product = array()) {
+    // Set the default required fields.
+    $weight_units = array('lb', 'kg', 'oz', 'g');
+    $length_units = array('in', 'ft', 'cm', 'mm');
+    $product += array(
+      'type' => 'product',
+      'model' => $this->randomName(8),
+      'title' => $this->randomName(8),
+      'list_price' => mt_rand(1, 9999),
+      'cost' => mt_rand(1, 9999),
+      'sell_price' => mt_rand(1, 9999),
+      'weight' => mt_rand(1, 9999),
+      'weight_units' => array_rand(array_flip($weight_units)),
+      'length' => mt_rand(1, 9999),
+      'width' => mt_rand(1, 9999),
+      'height' => mt_rand(1, 9999),
+      'length_units' => array_rand(array_flip($length_units)),
+      'pkg_qty' => mt_rand(1, 99),
+      'default_qty' => mt_rand(1, 5),
+      'ordering' => mt_rand(-25, 25),
+      'shippable' => TRUE,
+    );
+ 
+    $product = $this->drupalCreateNode($product);
+    $this->setProductStock($product);
+    $this->addAttributeToProduct($product);
+ 
+    return $product;
+  }
+
+  public function setProductStock($product) {
+    $this->drupalGet('node/' . $product->nid . '/edit/stock');
+
+    $stock = rand(1, 1000);
+    $edit = array(
+      'stock[0][active]' => 1,
+      'stock[0][stock]' => $stock,
+      'stock[0][threshold]' => rand(1, 100),
+    );
+    $this->drupalPost(NULL, $edit, t('Save changes'));
+    $this->assertText('Stock settings saved.');
+    $this->assertTrue(uc_stock_is_active($product->model));
+    $this->assertEqual($stock, uc_stock_level($product->model));
+
+  }
+
+  public function setStockDecrementRule() {
+    $this->drupalGet('admin/config/workflow/rules');
+    $this->assertText('uc_stock_decrement_on_order');
+    
+    // Remove the 'uc_checkout_action'
+    $this->drupalPost('admin/config/workflow/rules/reaction/manage/uc_stock_decrement_on_order/delete/event/uc_checkout_complete',
+      array("confirm" => 1), t('Remove'));
+    $this->assertText('has been removed.');
+    
+    // Add the payment gets entered action
+    $this->drupalPost('admin/config/workflow/rules/reaction/manage/uc_stock_decrement_on_order/add/event',
+      array("event" => 'uc_payment_entered'), t('Add'));
+    $this->assertText('A payment gets entered for an order');
+
+    // Verify the rules page is updated
+    $this->drupalGet('admin/config/workflow/rules');
+    $this->assertText('A payment gets entered for an order');
+
+    rules_clear_cache();
+  }
+
+  public static function createAttribute($data = array(), $save = TRUE) {
+    $attribute = $data + array(
+      'name' => DrupalWebTestCase::randomName(8),
+      'label' => DrupalWebTestCase::randomName(8),
+      'description' => DrupalWebTestCase::randomName(8),
+      'required' => mt_rand(0, 1) ? TRUE : FALSE,
+      'display' => mt_rand(0, 3),
+      'ordering' => mt_rand(-10, 10),
+    );
+    $attribute = (object) $attribute;
+
+    if ($save) {
+      uc_attribute_save($attribute);
+    }
+    return $attribute;
+  }
+
+  public static function createAttributeOption($data = array(), $save = TRUE) {
+    $max_aid = db_select('uc_attributes', 'a')
+      ->fields('a', array('aid'))
+      ->orderBy('aid', 'DESC')
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+    $option = $data + array(
+      'aid' => $max_aid,
+      'name' => DrupalWebTestCase::randomName(8),
+      'cost' => mt_rand(-500, 500),
+      'price' => mt_rand(-500, 500),
+      'weight' => mt_rand(-500, 500),
+      'ordering' => mt_rand(-10, 10),
+    );
+    $option = (object) $option;
+
+    if ($save) {
+      uc_attribute_option_save($option);
+    }
+    return $option;
+  }
+
+  public function addAttributeToProduct($product, $attribute = null) {
+    if ($attribute == null) {
+      $attribute = self::createAttribute(array('display' => 1));
+      $option = self::createAttributeOption(array('aid' => $attribute->aid));
+    }
+
+    $this->drupalGet('node/' . $product->nid . '/edit/attributes');
+    $this->assertText('You must first add attributes to this product.');
+
+    $this->clickLink('Add an attribute');
+    $this->assertText($attribute->name);
+
+    $this->drupalPost(NULL, array('add_attributes[' . $attribute->aid. ']' => 1), t('Add attributes'));
+    $this->assertText('1 attribute has been added.');    
+  }
+
+}
+?>

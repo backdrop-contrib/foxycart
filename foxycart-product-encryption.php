@@ -28,7 +28,7 @@ class FoxyCart_ProductEncryption {
 	 * Notes: Could be 'https://yourdomain.foxycart.com/cart' or 'https://secure.yourdomain.com/cart'
 	 **/
 	// protected static $cart_url = 'https://yourdomain.foxycart.com/cart';
-	protected $cart_url = 'https://' . foxycart_get_domain() . '.foxycart.com/cart';
+	protected $cart_url = 'https://' . foxycart_get_domain() . '/cart';
 
 
 	/**

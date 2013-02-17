@@ -7,7 +7,7 @@ function foxycart_api_getuser($email) {
 	$foxyData["customer_email"] = $email;
 
 	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, "https://" . foxycart_get_domain() . ".foxycart.com/api");
+	curl_setopt($ch, CURLOPT_URL, "https://" . foxycart_get_domain() . "/api");
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $foxyData);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
@@ -84,31 +84,34 @@ function foxycart_update_drupal_user($fc_customer_id, $fc_email, $fc_password, $
 
 function foxycart_api_update_user($email, $pass) {
 	$output = "";
+	$foxyResponse = new stdClass();
+	$foxyResponse->result = "FAIL";
 	$foxyData = array();
 	$foxyData["api_token"] = foxycart_get_apikey();
 	$foxyData["api_action"] = "customer_save";
 	$foxyData["customer_email"] = $email;
 	$foxyData["customer_password_hash"] = $pass;
 //	$foxyData["customer_password"] = $pass;
-	
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, "https://" . foxycart_get_domain() . ".foxycart.com/api");
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $foxyData);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-	// If you get SSL errors, you can uncomment the following, or ask your host to add the appropriate CA bundle
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	$response = trim(curl_exec($ch));
+	if (foxycart_get_domain() != '') {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, "https://" . foxycart_get_domain() . "/api");
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $foxyData);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+		// If you get SSL errors, you can uncomment the following, or ask your host to add the appropriate CA bundle
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		$response = trim(curl_exec($ch));
 
-	// The following if block will print any CURL errors you might have
-	if ($response == false) {
-		$output .=  "CURL Error: " . curl_error($ch);
-		return $output;
+		// The following if block will print any CURL errors you might have
+		if ($response == false) {
+			$output .=  "CURL Error: " . curl_error($ch);
+			return $output;
+		}
+		curl_close($ch);
+
+		$foxyResponse = new SimpleXMLElement($response);
 	}
-	curl_close($ch);
-
-	$foxyResponse = new SimpleXMLElement($response);
 	return $foxyResponse;
 }
 
@@ -122,7 +125,7 @@ function foxycart_process_sso() {
 	$foxycart_domain = foxycart_get_domain();
 
 	$return_hash = '';
-	$redirect_url = 'https://' . $foxycart_domain . '.foxycart.com/checkout';
+	$redirect_url = 'https://' . $foxycart_domain . '/checkout';
 	$customer_id = 0;
 	$timestamp = 0;
 	$fcsid = '';
@@ -147,7 +150,7 @@ function foxycart_process_sso() {
 					user_save($user, array('data' => array('fc_customer_id' => $customer_id )));
 				}
 				else {
-					foxycart_log("foxycart_api_getuser2");
+					foxycart_log("foxycart_api_getuser");
 					$foxyresponse = foxycart_api_update_user($user->mail, $user->pass);
 					if ((string)$foxyresponse->result == 'SUCCESS') {
 						$customer_id = (integer)$foxyresponse->customer_id;

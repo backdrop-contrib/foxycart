@@ -7,7 +7,7 @@
  *
  * Module to provide integration of Drupal and FoxyCart.
  *
- * Copyright (c) 2012 Jason York
+ * Copyright (c) 2013 Jason York
  *
  */
 
@@ -16,14 +16,17 @@ define("FOXYCART_DEBUG", FALSE);
 
 include_once "foxycart_help.inc.php";
 include_once "foxycart_user.inc.php";
-include_once "foxycart_datafeedtest.inc.php";
 
 
 function foxycart_init() {
 	if (strlen(foxycart_get_domain())) {
 
 		/* Include the required Javascript and CSS from foxycart.com */
-		drupal_add_js('//cdn.foxycart.com/' . foxycart_get_domain() . '/foxycart.colorbox.js', 'external');
+		$cdn_domain = foxycart_get_domain();
+		if (substr_compare($cdn_domain, ".foxycart.com", -strlen(".foxycart.com"), strlen(".foxycart.com")) === 0) {
+			$cdn_domain = str_replace(".foxycart.com", "", $cdn_domain);
+		}
+		drupal_add_js('//cdn.foxycart.com/' . $cdn_domain . '/foxycart.colorbox.js', 'external');
 		drupal_add_js(drupal_get_path('module', 'foxycart') .'/foxycart.js');
 
 		drupal_add_css(drupal_get_path('module', 'foxycart') .'/foxycart.css');
@@ -85,24 +88,6 @@ function foxycart_menu() {
 	'page callback' => 'foxycart_process_sso', 
 	'access callback' => TRUE);
 
-// 	TODO: Comment out - Used during development to test the datafeed functionality
-/*
-	$items['foxycart/test'] = array(
-		'title' => 'Test',
-	 	'type' => MENU_CALLBACK,
-		'description' => 'Process Foxycart SSO',
-		'page callback' => 'foxycart_test', 
-		'access callback' => TRUE);
-*/
-// 	TODO: Comment out - Used during development to test the datafeed functionality
-/*
-	$items['admin/foxycart/datafeedtest'] = array(
-	 	'title' => 'Datafeed Test',
-	 	'description' => 'Test the FoxyCart datafeed',
-	 	'access arguments' => array('access administration pages'),
-	 	'page callback' => 'foxycart_datafeed_test',
-	 	'weight' => '3');
-*/	   
 	return $items;
 }
 
@@ -132,7 +117,6 @@ function foxycart_theme($existing, $type, $theme, $path) {
 function foxycart_get_full_cart_block() {
 	global $base_root;
 
-	$foxycart_domain = foxycart_get_domain();
 	$path = drupal_get_path('module', 'foxycart');
 	if (variable_get('foxycart_show_logo', false))
 	{
@@ -147,7 +131,11 @@ function foxycart_get_full_cart_block() {
 }
 
 function foxycart_get_domain() {
-	return variable_get('foxycart_subdomain', '');
+	$domain = variable_get('foxycart_subdomain', '');
+	if ( (strlen($domain) > 0) && (strpos($domain, '.') === FALSE)) {
+		$domain .= ".foxycart.com";
+	}
+	return $domain;
 }
 
 function foxycart_get_apikey() {
@@ -194,47 +182,48 @@ function foxycart_block_view($delta = 0) {
 }
 
 /* Process the datafeed supplied by FoxyCart.com after an order is processed */
-function foxycart_datafeed() {
-
-	foxycart_log("datafeed: Starting");
-	if (isset($_POST['FoxyData'])) {
-		foxycart_log("datafeed: Got FoxyData");
-		try {
-			$XMLOutput_decrypted = urldecode($_POST["FoxyData"]);
-			$XMLOutput_decrypted = foxycart_decrypt_rc4(foxycart_get_apikey(),$XMLOutput_decrypted);
-			$data = simplexml_load_string($XMLOutput_decrypted, 'SimpleXMLElement', LIBXML_NOCDATA);
-			foxycart_log(print_r($data, true));
-			if (is_object($data)) {
-				foxycart_log("datafeed: Got data");
-
-				foreach ($data->transactions[0] as $transaction) {
-					foxycart_log("datafeed: Processing transaction");
-						
-					watchdog('foxycart', 'Recevied datafeed for transaction id <a href="https://admin.foxycart.com/admin.php?ThisAction=TransactionHistory&trans_id=%tid">%tid</a>, customer id %cid, %fn %ln. Order total: %total.',
-					array('%tid' => "$transaction->id", '%cid' => "$transaction->customer_id", '%fn' => "$transaction->customer_first_name",
-							 '%ln' => "$transaction->customer_last_name", '%total' => "$transaction->order_total"), WATCHDOG_INFO);
-					
-					if (variable_get('foxycart_user_sync', true) == true
-					&& (int)$transaction->is_anonymous == 0) {
-						$user = foxycart_update_drupal_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
-						if ($user == FALSE) {
-							throw new Exception('Error matching FoxyCart user to Drupal user when processing datafeed.');
-						}
-					}					
-					
-					if (module_exists('foxycart_uc')) {
-						foxycart_log("datafeed: creating UC order");
-						foxycart_uc_df_create_order($transaction);
-					}
-				}
-				print "foxy"; /* Success */
-			}
-		} catch (Exception $e) {
-			watchdog('foxycart', 'Error processing datafeed from FoxyCart: %err', array('%err' => $e->getMessage()), WATCHDOG_ERROR);
-			foxycart_log("datafeed: Error processing datafeed from FoxyCart: ". $e->getMessage());
-		}
+function foxycart_datafeed($feed = null) {
+	if ($feed == null && isset($_POST['FoxyData'])) {
+		$feed = $_POST['FoxyData'];
 	}
-	exit;
+	foxycart_log("datafeed: Starting");
+	foxycart_log("datafeed: Got FoxyData");
+	try {
+		$XMLOutput_decrypted = urldecode($feed);
+	
+		$XMLOutput_decrypted = foxycart_decrypt_rc4(foxycart_get_apikey(),$XMLOutput_decrypted);
+		$data = simplexml_load_string($XMLOutput_decrypted, 'SimpleXMLElement', LIBXML_NOCDATA);
+		foxycart_log(print_r($data, true));
+		if (is_object($data)) {
+			foxycart_log("datafeed: Got data");
+			foreach ($data->transactions[0] as $transaction) {
+				foxycart_log("datafeed: Processing transaction");
+					
+				watchdog('foxycart', 'Recevied datafeed for transaction id <a href="https://admin.foxycart.com/admin.php?ThisAction=TransactionHistory&trans_id=%tid">%tid</a>, customer id %cid, %fn %ln. Order total: %total.',
+				array('%tid' => "$transaction->id", '%cid' => "$transaction->customer_id", '%fn' => "$transaction->customer_first_name",
+						 '%ln' => "$transaction->customer_last_name", '%total' => "$transaction->order_total"), WATCHDOG_INFO);
+				
+				if (variable_get('foxycart_user_sync', true) == true
+				&& (int)$transaction->is_anonymous == 0) {
+					$user = foxycart_update_drupal_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
+					if ($user == FALSE) {
+						throw new Exception('Error matching FoxyCart user to Drupal user when processing datafeed.');
+					}
+				}					
+				
+				if (module_exists('foxycart_uc')) {
+					foxycart_log("datafeed: creating UC order");
+					foxycart_uc_df_create_order($transaction);
+				}
+			}
+			foxycart_log("datafeed: success");
+			print "foxy"; /* Success */
+		}
+	} catch (Exception $e) {
+		watchdog('foxycart', 'Error processing datafeed from FoxyCart: %err', array('%err' => $e->getMessage()), WATCHDOG_ERROR);
+		foxycart_log("datafeed: Error processing datafeed from FoxyCart: ". $e->getMessage());
+	}
+	//exit;
 }
 
 
@@ -265,7 +254,7 @@ function foxycart_admin_settings() {
   	'#title' => t("Your FoxyCart Subdomain"),
   	'#default_value' => foxycart_get_domain(),
   	'#size' => 70,
-  	'#description' => t("Your custom subdomain at foxycart.com. For example: if you setup mystore as your domain enter 'mystore' in the box above.  Your cart page would be located at mystore.foxycart.com/cart.php."),
+  	'#description' => t("Your FoxyCart store domain. Either mystore.foxycart.com or customdomain.example.com"),
   	'#maxlength' => 255,
   	'#required' => TRUE);
 
@@ -316,7 +305,7 @@ function foxycart_admin_settings() {
 	  '#type' => 'submit',
 	  '#value' => t('Save settings'),
 	);
-	//return system_settings_form($form);
+
 	return $form;
 }
 
