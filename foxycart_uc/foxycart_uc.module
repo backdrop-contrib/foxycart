@@ -211,11 +211,13 @@ function foxycart_uc_get_product_option_fields( &$product ) {
         $variant = node_view( uc_product_load_variant( $product->nid, $data ), 'teaser' );
 
         $display_price = "";
+        unset( $fcPriceModifier );
+        unset( $fcWeightModifier );
 
         if ( in_array( $attribute->aid, $priced_attributes ) ) {
           $adjustment = $variant['display_price']['#value'] - $base['display_price']['#value'];
  
-          unset( $fcPriceModifier );
+          
           if ( $adjustment != 0 ) {
             $fcPriceModifier = $adjustment > 0 ? '+' : '';
             $fcPriceModifier .= $adjustment;
@@ -225,7 +227,6 @@ function foxycart_uc_get_product_option_fields( &$product ) {
         }   
 
         $weight_adjustment = $variant['weight']['#amount'] - $base['weight']['#amount'];
-        unset( $fcWeightModifier );
         if ( $weight_adjustment != 0 ) {
           $fcWeightModifier = $weight_adjustment > 0 ? '+' : '';
           $fcWeightModifier .= $weight_adjustment;
