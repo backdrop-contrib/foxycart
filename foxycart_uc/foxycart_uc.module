@@ -237,7 +237,7 @@ function foxycart_uc_get_product_option_fields( &$product ) {
         isset( $fcWeightModifier ) ? $fcModifiers[] = 'w' . $fcWeightModifier : '';
 
         $optionName = $attribute->display == 2 ? check_plain( $option->name ) : $option->name;
-        $optionValue = foxycart_get_product_attribute( $product->model, urlencode( $name ), urlencode( $optionName ) .
+        $optionValue = foxycart_get_product_attribute( $product->model, urlencode( $name ), $optionName .
           ( count( $fcModifiers ) > 0 ? '{' . implode( '|', $fcModifiers ). '}' : '' ),
           'value' );
 
