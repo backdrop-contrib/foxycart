@@ -363,7 +363,7 @@ function foxycart_uc_modify_cart_form( &$form ) {
   }
 
   $stockLevel = uc_stock_level($node->model);
-  if ($stockLevel > 0) {
+  if ($stockLevel > 0 || $stockLevel === FALSE) {
     $form['actions']['submit'] = array(
       '#type' => 'submit',
       '#value' => t( 'Add to cart' ),
