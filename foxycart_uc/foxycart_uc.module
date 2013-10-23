@@ -325,7 +325,6 @@ function foxycart_uc_modify_cart_form( &$form ) {
     unset( $form['nid'] );
   }
 
-
   $form[foxycart_get_product_attribute( $node->model, 'code', $node->model )] = array( '#type' => 'hidden', '#value' => $node->model );
   $form['name'] = array( '#type' => 'hidden', '#value' => foxycart_get_product_attribute( $node->model, 'name', $node->title, 'value' ) );
   $form[foxycart_get_product_attribute( $node->model, 'price', $node->price )] = array( '#type' => 'hidden', '#value' => $node->price );
@@ -363,15 +362,29 @@ function foxycart_uc_modify_cart_form( &$form ) {
       = array( '#type' => 'hidden', '#value' => $node->default_qty ? $node->default_qty : 1 );
   }
 
+  $stockLevel = uc_stock_level($node->model);
+  if ($stockLevel > 0) {
+    $form['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t( 'Add to cart' ),
+      '#id' => 'edit-submit-' . $node->nid,
+      '#attributes' => array(
+        'class' => array( 'node-add-to-cart' ),
+      ),
+    );    
+  } else {
+    $form['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t( 'Out of Stock' ),
+      '#id' => 'edit-submit-' . $node->nid,
+      '#disabled' => 'disabled',
+      '#style' => 'cursor: notallowed',
+      '#attributes' => array(
+        'class' => array( 'node-add-to-cart' ),
+      ),
+    );    
+  }
 
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t( 'Add to cart' ),
-    '#id' => 'edit-submit-' . $node->nid,
-    '#attributes' => array(
-      'class' => array( 'node-add-to-cart' ),
-    ),
-  );
 
   $form['node'] = array(
     '#type' => 'value',

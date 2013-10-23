@@ -72,6 +72,31 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
     $this->assertFieldByXPath('//div[contains(@id,"edit-actions")]//input[@type="text"]', $product->default_qty, t('Quantity input box is present')); 
   }
 
+   public function testAddToCartButtonDisabledForNoStock() {
+    $this->drupalPost(
+      'admin/store/settings/products',
+      array('foxycart_uc_add_to_cart_qty' => TRUE),
+      t('Save configuration')
+    );
+    $this->assertFieldByName(
+      'foxycart_uc_add_to_cart_qty',
+      TRUE,
+      t('Add to cart quantity is enabled')
+    );  
+    $this->assertTrue(variable_get('foxycart_uc_add_to_cart_qty'), t('foxycart_uc_add_to_cart_qty variable set'));
+
+    $product = $this->createProduct(array('uid' => $this->adminUser->uid));
+    $this->setProductStock($product, 0);
+
+    $this->drupalGet('node/' . $product->nid);   
+
+    $this->assertText(
+      t('SKU: @model', array('@model' => $product->model)), t('Product model found.'));
+    $this->assertText(t('Quantity'), t('Quantity Label Found.'));
+    $this->assertFieldByXPath('//div[contains(@id,"edit-actions")]//input[@type="text"]', $product->default_qty, t('Quantity input box is present'));
+    $this->assertFieldByXPath('//div[contains(@id,"edit-actions")]//input[@type="submit"]', "Out of Stock", t('Out of Stock Notice Found.'));
+  } 
+
  /* check product options
  * role purchase
  */ 
@@ -230,10 +255,12 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
     return $product;
   }
 
-  public function setProductStock($product) {
+  public function setProductStock($product, $stock = NULL) {
     $this->drupalGet('node/' . $product->nid . '/edit/stock');
 
-    $stock = rand(1, 1000);
+    if ($stock == NULL) {
+      $stock = rand(1, 1000);
+    }
     $edit = array(
       'stock[0][active]' => 1,
       'stock[0][stock]' => $stock,

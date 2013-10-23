@@ -25,3 +25,7 @@
 	color: #888;
 	line-height: 28px;
 }
+
+form input.form-button-disabled {
+	cursor: not-allowed;
+}

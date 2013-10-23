@@ -7,6 +7,9 @@ function foxycart_uc_view_datafeed ($order) {
 		return '';
 }
 
+// TODO: Look at the uc_attribute_uc_product_alter method to try and determine
+// if there is an alternate SKU based on the product attributes
+
 function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 	$product->order_id = $order->order_id;
 	$product->title = (string)$transaction_detail->product_name;
