@@ -107,7 +107,7 @@ function getProductOptions() {
 
 function processStockQuery(data) {
 	if (data['price'] != undefined && data['price'].length > 0) {
-		jQuery('.uc-price').html(data['price']);
+		jQuery('.display-price .uc-price').html(data['price']);
 	}
 	determineStockStatus( data );
 }
