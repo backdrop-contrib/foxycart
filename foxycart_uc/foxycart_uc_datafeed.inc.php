@@ -10,10 +10,24 @@ function foxycart_uc_view_datafeed ($order) {
 // TODO: Look at the uc_attribute_uc_product_alter method to try and determine
 // if there is an alternate SKU based on the product attributes
 
+function foxycart_uc_parse_product_code($nid, $code) {
+	if ($nid == NULL) { return $code; }
+	list($baseCode, $modifiers_str) = explode('!', $code, 1);
+	if (strlen($modifiers_str)) {
+		$combinations = foxycart_uc_parse_modifiers($modifiers_str);
+		$model = alternate_sku_for_attributes($nid, $combinations);
+		foxycart_log("Found alternate model: " . $model  . ", for supplied code: " . $code);
+  }
+  if (strlen($model)) {
+  	return $model;
+ 	} else {
+ 		return $baseCode;
+ 	}
+}
+
 function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 	$product->order_id = $order->order_id;
 	$product->title = (string)$transaction_detail->product_name;
-	$product->model = (string)$transaction_detail->product_code;
 	$product->qty = (int)$transaction_detail->product_quantity;
 	$product->price = (float)$transaction_detail->product_price;
 	$product->weight = (float)$transaction_detail->product_weight;
@@ -41,6 +55,9 @@ function foxycart_uc_df_add_product_to_order(&$order, $transaction_detail) {
 			$order->products[] = $option;
 		}
 	}
+	// This needs to be run after we find the NID
+	$product->model = foxycart_uc_parse_product_code($product->nid , (string)$transaction_detail->product_code);
+	
 }
 
 function foxycart_uc_df_add_payment_to_order(&$order, $transaction) {

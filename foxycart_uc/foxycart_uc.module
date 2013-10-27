@@ -29,6 +29,13 @@ function foxycart_uc_menu() {
     'weight' => 20,
   );
 
+  $items['foxycart/stock-query'] = array(
+    'title' => 'stock query',
+    'page callback' => 'foxycart_uc_stock_query',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -36,6 +43,25 @@ function uc_cart_complete_sale( $order, $login = FALSE ) {
   // Stub for Ubercart's function.  This is called by uc_payment_enter
 }
 
+function foxycart_uc_stock_query() {
+  $cm = $_GET['modifiers'];
+  $nid = $_GET['nid'];
+  $combinations = foxycart_uc_parse_modifiers($cm);
+  $model = alternate_sku_for_attributes($nid, $combinations);
+  $stockLevel = uc_stock_level($model);
+  $response = array( "model" => $model, "stock_level" => $stockLevel);
+
+  // if there is some response, print it
+  drupal_json_output($response);
+}
+
+function foxycart_uc_parse_modifiers($modifiers_str) {
+  $modifiers = explode('!', $modifiers_str);
+  foreach ($modifiers as $mod) {
+    list($attribute_id, $option_id) = explode(',', $mod);
+    $combinations[$attribute_id] = $option_id;
+  }  
+}
 
 function foxycart_uc_get_zone_id( $zone_code ) {
   // Ubercart currently doesn't provide a way to get the zone_id based on zone code.  This is to fill that need
@@ -196,6 +222,8 @@ function foxycart_uc_get_product_option_fields( &$product ) {
 
     // Build the attribute options
     $form_option['#options'] = array();
+    $form_option['#attributes'] = array( 'data-aid' => $attribute->aid );
+    $form_option['#attributes']['class'][] = 'product-option';
 
     if ( count( $attribute->options ) && $attribute->display > 0 ) {
 
@@ -213,6 +241,8 @@ function foxycart_uc_get_product_option_fields( &$product ) {
         $display_price = "";
         unset( $fcPriceModifier );
         unset( $fcWeightModifier );
+        unset( $fcCodeModifier );
+        $fcCodeModifier = "!" . $attribute->aid . ',' . $option->oid;
 
         if ( in_array( $attribute->aid, $priced_attributes ) ) {
           $adjustment = $variant['display_price']['#value'] - $base['display_price']['#value'];
@@ -235,6 +265,7 @@ function foxycart_uc_get_product_option_fields( &$product ) {
         $fcModifiers = array();
         isset( $fcPriceModifier ) ? $fcModifiers[] = 'p' . $fcPriceModifier : '';
         isset( $fcWeightModifier ) ? $fcModifiers[] = 'w' . $fcWeightModifier : '';
+        isset( $fcCodeModifier ) ? $fcModifiers[] = 'c+' . $fcCodeModifier : '';
 
         $optionName = $attribute->display == 2 ? check_plain( $option->name ) : $option->name;
         $optionValue = foxycart_get_product_attribute( $product->model, urlencode( $name ), $optionName .
@@ -266,7 +297,6 @@ function foxycart_uc_get_product_option_fields( &$product ) {
     $form_options[urlencode( $name )] = $form_option;
 
   }
-
   return $form_options;
 }
 
@@ -325,7 +355,7 @@ function foxycart_uc_modify_cart_form( &$form ) {
     unset( $form['nid'] );
   }
 
-  $form[foxycart_get_product_attribute( $node->model, 'code', $node->model )] = array( '#type' => 'hidden', '#value' => $node->model );
+  $form[foxycart_get_product_attribute( $node->model, 'code', $node->model )] = array( '#type' => 'hidden', '#value' => $node->model, '#weight' => -1 );
   $form['name'] = array( '#type' => 'hidden', '#value' => foxycart_get_product_attribute( $node->model, 'name', $node->title, 'value' ) );
   $form[foxycart_get_product_attribute( $node->model, 'price', $node->price )] = array( '#type' => 'hidden', '#value' => $node->price );
 
@@ -362,7 +392,11 @@ function foxycart_uc_modify_cart_form( &$form ) {
       = array( '#type' => 'hidden', '#value' => $node->default_qty ? $node->default_qty : 1 );
   }
 
+ //print_r(alternate_sku_for_attributes($node->nid, array( 1 => "1", 4 => "7") ));
+ //print_r(uc_attribute_load(4, $node->nid, 'product'));
+
   $stockLevel = uc_stock_level($node->model);
+
   if ($stockLevel > 0 || $stockLevel === FALSE) {
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -394,5 +428,20 @@ function foxycart_uc_modify_cart_form( &$form ) {
 }
 
 
+function alternate_sku_for_attributes($nid, $attributes) {
+  $combination = array();
+  foreach ($attributes as $aid => $value) {
+    if (is_numeric($value)) {
+      $attribute = uc_attribute_load($aid, $nid, 'product');
+      if ($attribute && ($attribute->display == 1 || $attribute->display == 2)) {
+        $combination[$aid] = $value;
+      }
+    }
+  }
+  ksort($combination);
+  $model = db_query("SELECT model FROM {uc_product_adjustments} WHERE nid = :nid AND combination LIKE :combo", array(':nid' => $nid, ':combo' => serialize($combination)))->fetchField(); 
+
+  return $model;
+}
 
 ?>

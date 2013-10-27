@@ -29,3 +29,7 @@
 form input.form-button-disabled {
 	cursor: not-allowed;
 }
+
+input[disabled][type=submit] {
+	cursor: not-allowed;
+}

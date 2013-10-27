@@ -1,6 +1,6 @@
 // $Id$ 
 
-(function($) {
+jQuery( document ).ready(function( $ ) {
 
 	fcc.events.cart.postprocess = new FC.client.event();
 	fcc.events.cart.postprocess.add(function(){
@@ -47,7 +47,12 @@
 		});
 	};
 
-})(jQuery);
+	$('.product-option').change(function() {
+		getProductOptions();
+	});
+	getProductOptions()
+
+});
 
 function buildFullCart(products) {
 	$ = jQuery;
@@ -82,3 +87,39 @@ function buildCartRow(fc_name, fc_code, fc_options, fc_quantity,
 	cart += "</tr>";
 	return cart;
 }
+
+function getProductOptions() {
+	// Find the selected product options that have a 'code' aka 'sku' modifier
+	$modifiers = '';
+	jQuery(".product-option option[value*='c+\!']:selected, .product-option[value*='c+\!']:checked").each( function() {
+		this.value.match(/c\+(!.*)}/g);
+		$modifiers += RegExp.$1;
+	});
+
+	if ($modifiers != "") {
+		setInStock();
+		jQuery.getJSON( "/foxycart/stock-query", {
+			nid: 4,
+			modifiers: $modifiers
+		}).done( determineStockStatus );
+	}
+}
+
+function determineStockStatus( data ) {
+	if (data['stock_level'] === "0") {
+		setOutOfStock();
+	}
+}
+function setOutOfStock() {
+	var button = jQuery("input[type='submit'].node-add-to-cart");
+	button.prop('disabled', true);
+	button.val('Out of Stock');
+}
+
+function setInStock() {
+	var button = jQuery("input[type='submit'].node-add-to-cart");
+	button.prop('disabled', false);
+	button.val('Add to cart');
+}
+
+
