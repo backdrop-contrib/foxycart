@@ -101,8 +101,15 @@ function getProductOptions() {
 		jQuery.getJSON( "/foxycart/stock-query", {
 			nid: 4,
 			modifiers: $modifiers
-		}).done( determineStockStatus );
+		}).done( processStockQuery );
 	}
+}
+
+function processStockQuery(data) {
+	if (data['price'] != undefined && data['price'].length > 0) {
+		jQuery('.uc-price').html(data['price']);
+	}
+	determineStockStatus( data );
 }
 
 function determineStockStatus( data ) {

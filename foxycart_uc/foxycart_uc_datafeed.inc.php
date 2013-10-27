@@ -12,7 +12,7 @@ function foxycart_uc_view_datafeed ($order) {
 
 function foxycart_uc_parse_product_code($nid, $code) {
 	if ($nid == NULL) { return $code; }
-	list($baseCode, $modifiers_str) = explode('!', $code, 1);
+	list($baseCode, $modifiers_str) = explode('!', $code, 2);
 	if (strlen($modifiers_str)) {
 		$combinations = foxycart_uc_parse_modifiers($modifiers_str);
 		$model = alternate_sku_for_attributes($nid, $combinations);

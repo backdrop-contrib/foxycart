@@ -47,12 +47,22 @@ function foxycart_uc_stock_query() {
   $cm = $_GET['modifiers'];
   $nid = $_GET['nid'];
   $combinations = foxycart_uc_parse_modifiers($cm);
+  $price = foxycart_uc_attribute_price($nid, $combinations);
   $model = alternate_sku_for_attributes($nid, $combinations);
   $stockLevel = uc_stock_level($model);
-  $response = array( "model" => $model, "stock_level" => $stockLevel);
+  $response = array( "model" => $model, "stock_level" => $stockLevel, "price" => uc_currency_format($price));
 
   // if there is some response, print it
   drupal_json_output($response);
+}
+
+function foxycart_uc_attribute_price($nid, $combinations) {
+  $node = node_load($nid);
+  $price = $node->price;
+  foreach ($combinations as $attribute_id => $option_id) {
+    $price += $node->attributes[$attribute_id]->options[$option_id]->price;
+  }
+  return $price;
 }
 
 function foxycart_uc_parse_modifiers($modifiers_str) {
@@ -61,6 +71,7 @@ function foxycart_uc_parse_modifiers($modifiers_str) {
   foreach ($modifiers as $mod) {
     list($attribute_id, $option_id) = explode(',', $mod);
     if (strlen($attribute_id)) {
+      $attribute = uc_attribute_load($attribute_id, $node->nid, 'product');
       $combinations[$attribute_id] = $option_id;
     }
   }
