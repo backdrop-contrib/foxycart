@@ -57,10 +57,14 @@ function foxycart_uc_stock_query() {
 
 function foxycart_uc_parse_modifiers($modifiers_str) {
   $modifiers = explode('!', $modifiers_str);
+  $combinations = array();
   foreach ($modifiers as $mod) {
     list($attribute_id, $option_id) = explode(',', $mod);
-    $combinations[$attribute_id] = $option_id;
-  }  
+    if (strlen($attribute_id)) {
+      $combinations[$attribute_id] = $option_id;
+    }
+  }
+  return $combinations;
 }
 
 function foxycart_uc_get_zone_id( $zone_code ) {
