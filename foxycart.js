@@ -95,11 +95,11 @@ function getProductOptions() {
 		this.value.match(/c\+(!.*)}/g);
 		$modifiers += RegExp.$1;
 	});
-
-	if ($modifiers != "") {
+	var nid = $( "input[name^='nid||']" ).val()
+	if ($modifiers != "" && nid != "") {
 		setInStock();
 		jQuery.getJSON( "/foxycart/stock-query", {
-			nid: 4,
+			nid: nid,
 			modifiers: $modifiers
 		}).done( processStockQuery );
 	}
