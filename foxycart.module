@@ -7,7 +7,7 @@
  *
  * Module to provide integration of Drupal and FoxyCart.
  *
- * Copyright (c) 2013 Jason York
+ * Copyright (c) 2014 Jason York
  *
  */
 
@@ -35,11 +35,11 @@ function foxycart_init() {
 }
 
 function foxycart_test() {
-	$testuser = "test@example.com";	
+	$testuser = "test@example.com";
 	print "<pre>update:<br/>";
 //	print_r(htmlentities(foxycart_api_update_user($testuser, "test123")->asXML() ));
 	print "get: <br/><br/>";
-	
+
 	print_r(htmlentities(foxycart_api_getuser($testuser)->asXML()));
 
 	//print_r($order);
@@ -53,7 +53,7 @@ function foxycart_menu() {
 	// Admin user pages
 	$items['admin/foxycart'] = array(
     'title' => 'FoxyCart',
-  	'page callback' => 'drupal_get_form', 
+  	'page callback' => 'drupal_get_form',
   	'access arguments' => array('access administration pages'),
   	'page arguments' => array('foxycart_admin_settings'),
   	'file' => 'foxycart.module');
@@ -61,7 +61,7 @@ function foxycart_menu() {
 	$items['admin/foxycart/settings'] = array(
   	'title' => 'Settings',
   	'description' => 'Configure FoxyCart Drupal Settings',
-  	'page callback' => 'drupal_get_form', 
+  	'page callback' => 'drupal_get_form',
   	'access arguments' => array('access administration pages'),
   	'page arguments' => array('foxycart_admin_settings'),
   	'weight' => '1');
@@ -70,14 +70,14 @@ function foxycart_menu() {
   	'title' => 'Help',
   	'description' => 'Detailed Instructions on Using Drupal FoxyCart',
   	'access arguments' => array('access administration pages'),
-   	'page callback' => 'foxycart_detailed_help', 
+   	'page callback' => 'foxycart_detailed_help',
   	'weight' => '2');
 
 	$items['foxycart/datafeed'] = array(
 	'title' => 'FoxyCart Datafeed',
  	'type' => MENU_CALLBACK,
 	'description' => 'Process the FoxyCart datafeed',
-	'page callback' => 'foxycart_datafeed', 
+	'page callback' => 'foxycart_datafeed',
 	'access callback' => TRUE,
 	'weight' => '4');
 
@@ -85,7 +85,7 @@ function foxycart_menu() {
 	'title' => 'Foxycart SSO',
  	'type' => MENU_CALLBACK,
 	'description' => 'Process Foxycart SSO',
-	'page callback' => 'foxycart_process_sso', 
+	'page callback' => 'foxycart_process_sso',
 	'access callback' => TRUE);
 
 	return $items;
@@ -145,7 +145,7 @@ function foxycart_get_apikey() {
 		variable_set('foxycart_apikey', $key);
 		$test = variable_get('foxycart_apikey', '');
 	}
-	return $key; 
+	return $key;
 }
 
 /**
@@ -190,7 +190,7 @@ function foxycart_datafeed($feed = null) {
 	foxycart_log("datafeed: Got FoxyData");
 	try {
 		$XMLOutput_decrypted = urldecode($feed);
-	
+
 		$XMLOutput_decrypted = foxycart_decrypt_rc4(foxycart_get_apikey(),$XMLOutput_decrypted);
 		$data = simplexml_load_string($XMLOutput_decrypted, 'SimpleXMLElement', LIBXML_NOCDATA);
 		foxycart_log(print_r($data, true));
@@ -198,19 +198,19 @@ function foxycart_datafeed($feed = null) {
 			foxycart_log("datafeed: Got data");
 			foreach ($data->transactions[0] as $transaction) {
 				foxycart_log("datafeed: Processing transaction");
-					
+
 				watchdog('foxycart', 'Recevied datafeed for transaction id <a href="https://admin.foxycart.com/admin.php?ThisAction=TransactionHistory&trans_id=%tid">%tid</a>, customer id %cid, %fn %ln. Order total: %total.',
 				array('%tid' => "$transaction->id", '%cid' => "$transaction->customer_id", '%fn' => "$transaction->customer_first_name",
 						 '%ln' => "$transaction->customer_last_name", '%total' => "$transaction->order_total"), WATCHDOG_INFO);
-				
+
 				if (variable_get('foxycart_user_sync', true) == true
 				&& (int)$transaction->is_anonymous == 0) {
 					$user = foxycart_update_drupal_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
 					if ($user == FALSE) {
 						throw new Exception('Error matching FoxyCart user to Drupal user when processing datafeed.');
 					}
-				}					
-				
+				}
+
 				if (module_exists('foxycart_uc')) {
 					foxycart_log("datafeed: creating UC order");
 					foxycart_uc_df_create_order($transaction);
@@ -234,7 +234,7 @@ function fclink($text = 'FoxyCart') {
 function foxycart_permission() {
 	return array(
 	    'access administration pages' => array(
-	      'title' => t('Access Administration Pages'), 
+	      'title' => t('Access Administration Pages'),
 	      'description' => t('Perform administration tasks for FoxyCart.'),
 	)
 	);
@@ -275,9 +275,9 @@ function foxycart_admin_settings() {
 	  	'#title' => t("Reset (Generate a new) API Key"),
 	  	'#default_value' => false,
 	  	'#description' => t('Creates a new API Key.  After saving this option, update the FoxyCart Admin with the new key'),
-	  	'#required' => FALSE);	
-	
-	
+	  	'#required' => FALSE);
+
+
 	$form['auth'] = array(
   	'#type' => 'fieldset',
   	'#title' => t('Authentication settings'));
@@ -298,8 +298,8 @@ function foxycart_admin_settings() {
   	'#title' => t("Show FoxyCart Logo"),
   	'#default_value' => variable_get('foxycart_show_logo', false),
   	'#description' => t('Display the "Powered By FoxyCart" logo'),
-  	'#required' => FALSE);	
-	
+  	'#required' => FALSE);
+
 	// Submit button
 	$form['submit'] = array(
 	  '#type' => 'submit',
@@ -311,14 +311,14 @@ function foxycart_admin_settings() {
 
 function foxycart_admin_settings_submit($form, &$form_state) {
 	variable_set('foxycart_subdomain', $form_state['values']['foxycart_subdomain']);
-	
+
 	if ($form_state['values']['foxycart_reset_apikey'] == 1) {
 		variable_del('foxycart_apikey');
 		foxycart_get_apikey();
 	}
 	variable_set('foxycart_user_sync', $form_state['values']['foxycart_user_sync']);
 	variable_set('foxycart_show_logo', $form_state['values']['foxycart_show_logo']);
-	
+
 	drupal_set_message(t('The settings have been saved'));
 }
 
@@ -326,7 +326,7 @@ function foxycart_admin_settings_submit($form, &$form_state) {
 function foxycart_decrypt_rc4($inkey, $data)
 {
 	$result = "";
-	
+
 	$S = array();
 	$key = array();
 
@@ -421,4 +421,98 @@ function foxycart_log($data, $label = NULL) {
 	}
 }
 
-?>
+
+
+/**
+* Create an HTML 'add to cart' href link
+*
+* Example:
+* @code
+*   print foxycart_purchase_link("Add to cart", array('code' => "my-product-code", 'name' => "My Product Name", "price" => "5"));
+* @endcode
+*
+* @param string $text
+*   The translated link text for the anchor tag.
+* @param array $attributes
+*   Foxycart key => value array to be attached as a query. It should at least include 'code', 'name' and 'price'
+* @param array $options
+*   An associative array of additional options. See the l() function for more details.
+*
+* @return string
+*   An HTML string containing an add-to-cart link
+*
+* @see l()
+*/
+function foxycart_purchase_link($text, $attributes, $options = array()) {
+  $query = array();
+  foreach ($attributes as $attr => $val) {
+    $query[foxycart_get_product_attribute($attributes['code'], $attr, $val)] = $val;
+  }
+
+  $link_options = array(
+    'attributes' => array('class' => array('foxycart', 'purchase-link')),
+    'query' => $query,
+  );
+
+  $link_options = array_merge_recursive($link_options, $options);
+
+  return l($text, 'https://'.variable_get('foxycart_subdomain', '')."/cart", $link_options);
+}
+
+/**
+* Get an 'add to cart' form
+*
+* This returns a form that contains a single submit button that will add a product to a cart. Example:
+* @code
+*   print drupal_render(drupal_get_form('foxycart_purchase_link_form', "Add to cart", array(
+*     'code' => "my-product-code",
+*     'name' => "My Product Name",
+*     'price' => "5"
+*   ));
+* @endcode
+*
+* @param string $text
+*   The translated link text for the submit button.
+* @param array $attributes
+*   Foxycart key => value array to be attached as a query. It should at least include 'code', 'name' and 'price'
+*
+* @return form
+*   A form array reader to be rendered using drupal_render()
+*/
+function foxycart_purchase_link_form($form, &$form_state, $text, $attributes) {
+  $form['#action'] = 'https://'.variable_get('foxycart_subdomain', '')."/cart";
+  $form['purchase'] = array('#type' => 'submit', '#value' => $text);
+
+  foreach ($attributes as $attr => $val) {
+    $form[$attr] = array(
+      '#type' => 'hidden',
+      '#value' => $val,
+      '#attributes' => array('name' => array(foxycart_get_product_attribute($attributes['code'], $attr, $val))),
+    );
+  }
+  // Unset form items that confuse foxycart
+  $form['#pre_render'] = array('foxycart_remove_form_items');
+
+  return $form;
+}
+
+/**
+* Callback to remove form items that confuse the foxycart API
+*
+* It removes `form_token`, `form_id` and `form_build_id`.
+* It should be used in conjuction with From API's `#pre_render`.
+*
+* @param array $form
+*   The form
+*
+* @return form
+*   The form with the offending items removed
+*
+* @ingroup callbacks
+*/
+function foxycart_remove_form_items($form) {
+  unset($form['form_token']);
+  unset($form['form_id']);
+  unset($form['form_build_id']);
+  return $form;
+}
