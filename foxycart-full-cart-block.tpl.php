@@ -1,6 +1,6 @@
 <?php
 
-// $Id$ 
+// $Id$
 ?>
 <div id="fc_cart">
 <h2>Your Cart</h2>
@@ -15,7 +15,7 @@
 </tbody>
 </table>
 <span id="fc_cart_message"></span>
-<a class="fc_cart_link" href="https://<?php echo $fc_domain; ?>/cart?cart=checkout" id="fc_checkout_link">Check Out</a>
+<a class="fc_cart_link" href="https://<?php echo $fc_domain; ?>/cart?cart=checkout" id="fc_checkout_link" style="float:left">Check Out</a>
 <a class="fc_cart_link" href="https://<?php echo $fc_domain; ?>/cart?cart=view" class="foxycart" style="float:right">Edit Cart</a>
 <div class="fc_clear"></div>
 <?php echo $logo; ?>

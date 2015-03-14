@@ -1,12 +1,16 @@
 <?php
 
-// $Id$ 
+// $Id$
 
 ?>
-<div id="fc_minicart" style="display: none">Your Cart: 
-  <a href="https://<?php echo $fc_domain ?>/cart?cart=view" class="foxycart">
-  	<span id="fc_quantity">0</span> item(s): 
-  	$<span id="fc_total_price">0.00</span> 
+<h2>Your Cart</h2>
+<p data-fc-id="minicart" style="display: none;">
+  <a href="https://<?php echo $fc_domain; ?>/cart?cart=view">
+    <span data-fc-id="minicart-quantity">0</span>
+    <span data-fc-id="minicart-singular"> item </span>
+    <span data-fc-id="minicart-plural"> items </span>
+    total: $<span data-fc-id="minicart-order-total">0</span>
   </a>
-</div>
+</p>
+
 <div id="fc_minicart_empty" style="display: none">Your shopping cart is empty</div>

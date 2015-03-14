@@ -1,5 +1,4 @@
 // $Id$
-
 (function ($) {
 	Drupal.behaviors.foxycart = {
 		attach: function(context, settings) {
@@ -7,51 +6,6 @@
 			if ($().jquery.split(".")[0] == "1" && parseInt($().jquery.split(".")[1]) < 8) {
 				alert("jQuery 1.8 or later required.");
 			}
-
-			fcc.events.cart.postprocess = new FC.client.event();
-			fcc.events.cart.postprocess.add(function(){
-				fcc.cart_update();
-				return "pause";
-			});
-			fcc.events.cart.postprocess.add(function(){
-				Drupal.foxycart.buildFullCart(FC.json.products);
-			});
-			fcc.events.cart.ready.add(function() {
-				if (FC.json.products) {
-					Drupal.foxycart.buildFullCart(FC.json.products);
-				}
-			});
-
-			FC.client.prototype.cart_update = function() {
-				var self = this;
-				$.getJSON('https://' + this.storedomain + '/cart.php?cart=get&output=json' + this.session_get() + '&callback=?', function(data) {
-					FC.json = data;
-					if ( ! self.session_initialized === true) {
-						self.session_initialized = true;
-						FC.session_id = data.session_id;
-						self.session_set();
-						self.session_get();
-					}
-
-					// "Minicart" Helpers
-					if (FC.json.product_count > 0) {
-						$("#fc_minicart, .fc_minicart").show();
-						$("#fc_minicart_empty, .fc_minicart_empty").hide();
-					} else {
-						$("#fc_minicart, .fc_minicart").hide();
-						$("#fc_minicart_empty, .fc_minicart_empty").show();
-					}
-					// update values
-					$("#fc_quantity, .fc_quantity").html("" + FC.json.product_count);
-					$("#fc_total_price, .fc_total_price").html("" + self._currency_format(FC.json.total_price));
-					// Execute the ready event on intial pageload, if it's defined
-					if (self.events.cart.ready.counter === 0) {
-						self.events.cart.ready.execute();
-					} else {
-						self.events.cart.postprocess.resume();
-					}
-				});
-			};
 
 			$('.product-option').change(function() {
 				Drupal.foxycart.getProductOptions();
@@ -62,9 +16,10 @@
 
 	// Utility functions
 	Drupal.foxycart = {};
-	Drupal.foxycart.buildFullCart = function(products) {
+	Drupal.foxycart.buildFullCart = function(params) {
+		var products = FC.json.items;
 		var cart = "";
-		if (products.length > 0) {
+		if (FC.json.item_count > 0) {
 			for (i = 0; i < products.length; i++) {
 				cart += Drupal.foxycart.buildCartRow(products[i].name,
 						products[i].code,
@@ -77,10 +32,12 @@
 			$("#fc_cart_items").html(cart);
 			$("#fc_cart_message").html("");
 			$(".fc_cart_link").show();
+			$("#fc_minicart_empty, .fc_minicart_empty").hide();
 		} else {
 			$("#fc_cart_contents").hide();
 			$(".fc_cart_link").hide();
 			$("#fc_cart_message").html("Your shopping cart is empty");
+			$("#fc_minicart_empty, .fc_minicart_empty").show();
 		}
 	}
 
@@ -135,7 +92,15 @@
 		button.val('Add to cart');
 	}
 
+
 })(jQuery);
 
-
+var FC = FC || {};
+FC.onLoad = function () {
+  FC.client.on('ready.done', Drupal.foxycart.buildFullCart);
+  FC.client.on('cart-submit.done', Drupal.foxycart.buildFullCart);
+	FC.client.on('cart-item-quantity-update.done', Drupal.foxycart.buildFullCart);
+	FC.client.on('cart-item-remove.done', Drupal.foxycart.buildFullCart);
+	FC.client.on('cart-update', Drupal.foxycart.buildFullCart);
+};
 
