@@ -1,0 +1,6 @@
+[FoxyCartUCTestCase]
+name = FoxyCart with UberCart
+description = Tests the supported UberCart features with FoxyCart.
+group = FoxyCart
+file = foxycart_uc.test
+

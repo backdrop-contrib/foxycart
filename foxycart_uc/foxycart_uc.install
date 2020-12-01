@@ -1,22 +1,12 @@
 <?php
 
-// $Id$
-
 /**
  * @file foxycart_uc.install
  *
- * Integrates FoxyCart with Drupal.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features.
- *
- * Copyright (c) 201 Jason York
- *
+ * Integrates FoxyCart with Backdrop. This module is an optional add-on that will
+ * utilize Ubercart as backend store, but use FoxyCart for the cart, checkout
+ * and shipping features.
  */
-
-/**
- * Implementation of hook_uninstall().
- */
-function foxycart_uc_uninstall() {
-  variable_del('foxycart_uc_add_to_cart_qty'); 	
-}
 
 
 function foxycart_uc_requirements($phase) {
@@ -39,5 +29,17 @@ function foxycart_uc_requirements($phase) {
 	}
 }
 
+/**
+ * Upgrade Foxycart UC settings from variables to config.
+ */
+function foxycart_uc_update_1000() {
+  // Migrate variables to config.
+  $config = config('foxycart.settings');
+  $config->set('foxycart_uc_add_to_cart_qty', update_variable_get('foxycart_uc_add_to_cart_qty', FALSE));
+  $config->set('foxycart_uc_update_node_view', update_variable_get('foxycart_uc_update_node_view', FALSE));
+  $config->save();
 
-?>
+  // Delete variables.
+  update_variable_del('foxycart_uc_add_to_cart_qty');
+  update_variable_del('foxycart_uc_update_node_view')
+}

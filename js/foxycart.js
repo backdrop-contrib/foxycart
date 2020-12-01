@@ -1,6 +1,6 @@
 // $Id$
 (function ($) {
-	Drupal.behaviors.foxycart = {
+	Backdrop.behaviors.foxycart = {
 		attach: function(context, settings) {
 			// Check jQuery version for 1.8 or higher
 			if ($().jquery.split(".")[0] == "1" && parseInt($().jquery.split(".")[1]) < 8) {
@@ -8,20 +8,20 @@
 			}
 
 			$('.product-option').change(function() {
-				Drupal.foxycart.getProductOptions();
+				Backdrop.foxycart.getProductOptions();
 			});
-			Drupal.foxycart.getProductOptions();
+			Backdrop.foxycart.getProductOptions();
 		}
 	};
 
 	// Utility functions
-	Drupal.foxycart = {};
-	Drupal.foxycart.buildFullCart = function(params) {
+	Backdrop.foxycart = {};
+	Backdrop.foxycart.buildFullCart = function(params) {
 		var products = FC.json.items;
 		var cart = "";
 		if (FC.json.item_count > 0) {
 			for (i = 0; i < products.length; i++) {
-				cart += Drupal.foxycart.buildCartRow(products[i].name,
+				cart += Backdrop.foxycart.buildCartRow(products[i].name,
 						products[i].code,
 						products[i].options,
 						products[i].quantity,
@@ -42,7 +42,7 @@
 	}
 
 	// This function is called by fc_BuildFoxyCart() for each product in your cart.
-	Drupal.foxycart.buildCartRow = function(fc_name, fc_code, fc_options, fc_quantity, fc_price_each, fc_price) {
+	Backdrop.foxycart.buildCartRow = function(fc_name, fc_code, fc_options, fc_quantity, fc_price_each, fc_price) {
 		var cart = "<tr>";
 		cart += "<td>" + fc_name + "</td>";
 		cart += "<td class=\"right-align\">" + fc_quantity + "</td>";
@@ -51,7 +51,7 @@
 		return cart;
 	}
 
-	Drupal.foxycart.getProductOptions = function() {
+	Backdrop.foxycart.getProductOptions = function() {
 		// Find the selected product options that have a 'code' aka 'sku' modifier
 		$modifiers = '';
 		$(".product-option option[value*='c+\!']:selected, .product-option[value*='c+\!']:checked").each( function() {
@@ -60,33 +60,33 @@
 		});
 		var nid = $( "input[name^='nid||']" ).val();
 		if ($modifiers !== "" && nid !== "") {
-			Drupal.foxycart.setInStock();
+			Backdrop.foxycart.setInStock();
 			$.getJSON( "/foxycart/stock-query", {
 				nid: nid,
 				modifiers: $modifiers
-			}).done( Drupal.foxycart.processStockQuery );
+			}).done( Backdrop.foxycart.processStockQuery );
 		}
 	}
 
-	Drupal.foxycart.processStockQuery = function(data) {
+	Backdrop.foxycart.processStockQuery = function(data) {
 		if (data['price'] != undefined && data['price'].length > 0) {
 			$('.display-price .uc-price').html(data['price']);
 		}
-		Drupal.foxycart.determineStockStatus( data );
+		Backdrop.foxycart.determineStockStatus( data );
 	}
 
-	Drupal.foxycart.determineStockStatus = function( data ) {
+	Backdrop.foxycart.determineStockStatus = function( data ) {
 		if (data['stock_level'] === "0") {
-			Drupal.foxycart.setOutOfStock();
+			Backdrop.foxycart.setOutOfStock();
 		}
 	}
-	Drupal.foxycart.setOutOfStock = function() {
+	Backdrop.foxycart.setOutOfStock = function() {
 		var button = $("input[type='submit'].node-add-to-cart");
 		button.prop('disabled', true);
 		button.val('Out of Stock');
 	}
 
-	Drupal.foxycart.setInStock = function() {
+	Backdrop.foxycart.setInStock = function() {
 		var button = $("input[type='submit'].node-add-to-cart");
 		button.prop('disabled', false);
 		button.val('Add to cart');
@@ -97,10 +97,10 @@
 
 var FC = FC || {};
 FC.onLoad = function () {
-  FC.client.on('ready.done', Drupal.foxycart.buildFullCart);
-  FC.client.on('cart-submit.done', Drupal.foxycart.buildFullCart);
-	FC.client.on('cart-item-quantity-update.done', Drupal.foxycart.buildFullCart);
-	FC.client.on('cart-item-remove.done', Drupal.foxycart.buildFullCart);
-	FC.client.on('cart-update', Drupal.foxycart.buildFullCart);
+  FC.client.on('ready.done', Backdrop.foxycart.buildFullCart);
+  FC.client.on('cart-submit.done', Backdrop.foxycart.buildFullCart);
+	FC.client.on('cart-item-quantity-update.done', Backdrop.foxycart.buildFullCart);
+	FC.client.on('cart-item-remove.done', Backdrop.foxycart.buildFullCart);
+	FC.client.on('cart-update', Backdrop.foxycart.buildFullCart);
 };
 

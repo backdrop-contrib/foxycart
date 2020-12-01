@@ -1,6 +1,6 @@
 <?php
 
-require_once(dirname(__FILE__).'/../../foxycart_rc4crypt.inc.php');
+require_once(dirname(__FILE__).'/../../includes/foxycart_rc4crypt.inc.php');
 
 function foxycart_uc_test_get_order_XML($product = null, $user = null)
 {
@@ -98,7 +98,7 @@ $XMLOutput = <<<XML
             <discounts/>
             <customer_password><![CDATA[\$S\$DvYkoe3RIPa11cQ9wpzWyBUqvlOAIPokfk2Eefb5y/Zh2pb9LzZ1]]></customer_password>
             <customer_password_salt/>
-            <customer_password_hash_type>drupal</customer_password_hash_type>
+            <customer_password_hash_type>backdrop</customer_password_hash_type>
             <customer_password_hash_config>15</customer_password_hash_config>
             <custom_fields/>
             <transaction_details>

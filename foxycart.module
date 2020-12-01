@@ -1,21 +1,16 @@
 <?php
 
-// $Id$
-
 /**
  * @file foxycart.module
  *
- * Module to provide integration of Drupal and FoxyCart.
- *
- * Copyright (c) 2014 Jason York
- *
+ * Module to provide integration of Backdrop and FoxyCart.
  */
 
 // Before enabling, make sure the devel module is enabled
 define("FOXYCART_DEBUG", FALSE);
 
-include_once "foxycart_help.inc.php";
-include_once "foxycart_user.inc.php";
+include_once "includes/foxycart_help.inc.php";
+include_once "includes/foxycart_user.inc.php";
 
 
 function foxycart_init() {
@@ -27,10 +22,10 @@ function foxycart_init() {
 			$cdn_domain = str_replace(".foxycart.com", "", $cdn_domain);
 		}
 
-		drupal_add_js('//cdn.foxycart.com/' . $cdn_domain . '/loader.js', array('type' => 'external', 'defer' => true, 'async' => true));
-		drupal_add_js(drupal_get_path('module', 'foxycart') .'/foxycart.js');
+		backdrop_add_js('//cdn.foxycart.com/' . $cdn_domain . '/loader.js', array('type' => 'external', 'defer' => true, 'async' => true));
+		backdrop_add_js(backdrop_get_path('module', 'foxycart') .'/js/foxycart.js');
 
-		drupal_add_css(drupal_get_path('module', 'foxycart') .'/foxycart.css');
+		backdrop_add_css(backdrop_get_path('module', 'foxycart') .'/css/foxycart.css');
 	}
 }
 
@@ -53,36 +48,36 @@ function foxycart_menu() {
 	// Admin user pages
 	$items['admin/foxycart'] = array(
     'title' => 'FoxyCart',
-  	'page callback' => 'drupal_get_form',
+  	'page callback' => 'backdrop_get_form',
   	'access arguments' => array('access administration pages'),
   	'page arguments' => array('foxycart_admin_settings'),
   	'file' => 'foxycart.module');
 
 	$items['admin/foxycart/settings'] = array(
   	'title' => 'Settings',
-  	'description' => 'Configure FoxyCart Drupal Settings',
-  	'page callback' => 'drupal_get_form',
+  	'description' => 'Configure FoxyCart Backdrop Settings',
+  	'page callback' => 'backdrop_get_form',
   	'access arguments' => array('access administration pages'),
   	'page arguments' => array('foxycart_admin_settings'),
   	'weight' => '1');
 
 	$items['admin/foxycart/help'] = array(
   	'title' => 'Help',
-  	'description' => 'Detailed Instructions on Using Drupal FoxyCart',
+  	'description' => 'Detailed Instructions on Using Backdrop FoxyCart',
   	'access arguments' => array('access administration pages'),
    	'page callback' => 'foxycart_detailed_help',
   	'weight' => '2');
 
 	$items['foxycart/datafeed'] = array(
-	'title' => 'FoxyCart Datafeed',
+	'title' => 'Foxy Datafeed',
  	'type' => MENU_CALLBACK,
-	'description' => 'Process the FoxyCart datafeed',
+	'description' => 'Process the Foxy datafeed',
 	'page callback' => 'foxycart_datafeed',
 	'access callback' => TRUE,
 	'weight' => '4');
 
 	$items['foxycart/sso'] = array(
-	'title' => 'Foxycart SSO',
+	'title' => 'FoxyCart SSO',
  	'type' => MENU_CALLBACK,
 	'description' => 'Process Foxycart SSO',
 	'page callback' => 'foxycart_process_sso',
@@ -94,9 +89,9 @@ function foxycart_menu() {
 function foxycart_help($path, $arg) {
 	switch ($path) {
 		case 'admin/help#foxycart':
-			return t('The FoxyCart module integrates the ' . fclink() .' system with Drupal');
+			return t('The FoxyCart module integrates the ' . fclink() .' system with Backdrop');
 		case 'admin/foxycart/settings':
-			return t('Configures FoxyCart Drupal Settings');
+			return t('Configures FoxyCart Backdrop Settings');
 	}
 }
 
@@ -117,10 +112,10 @@ function foxycart_theme($existing, $type, $theme, $path) {
 function foxycart_get_full_cart_block() {
 	global $base_root;
 
-	$path = drupal_get_path('module', 'foxycart');
-	if (variable_get('foxycart_show_logo', false))
+	$path = backdrop_get_path('module', 'foxycart');
+	if (config_get('foxycart.settings', 'foxycart_show_logo'))
 	{
-		$fc_link = fclink(theme('image', array('path' =>  $path . '/powered-by-foxycart-80x15.png', 'alt' => t('Powered by FoxyCart Ecommerce'), 'title' => t('Powered by FoxyCart Ecommerce'), 'attributes' => array('id' => 'fc_full_cart_logo'))));
+		$fc_link = fclink(theme('image', array('path' =>  $path . '/images/powered-by-foxycart-80x15.png', 'alt' => t('Powered by Foxy Ecommerce'), 'title' => t('Powered by Foxy Ecommerce'), 'attributes' => array('id' => 'fc_full_cart_logo'))));
 	}
 	else
 	{
@@ -131,7 +126,7 @@ function foxycart_get_full_cart_block() {
 }
 
 function foxycart_get_domain() {
-	$domain = variable_get('foxycart_subdomain', '');
+	$domain = config_get('foxycart.settings', 'foxycart_subdomain');
 	if ( (strlen($domain) > 0) && (strpos($domain, '.') === FALSE)) {
 		$domain .= ".foxycart.com";
 	}
@@ -139,11 +134,13 @@ function foxycart_get_domain() {
 }
 
 function foxycart_get_apikey() {
-	$key = variable_get('foxycart_apikey', '');
+    $config = config('foxycart.settings');
+	$key = $config->get('foxycart_apikey');
 	if ($key == '') {
 		$key = "fx5pl9".hash_hmac('sha256',rand(1000,65535),"soi42".time());
-		variable_set('foxycart_apikey', $key);
-		$test = variable_get('foxycart_apikey', '');
+		$config->set('foxycart_apikey');
+		$config->save();
+		$test = $config->get('foxycart_apikey');
 	}
 	return $key;
 }
@@ -203,11 +200,11 @@ function foxycart_datafeed($feed = null) {
 				array('%tid' => "$transaction->id", '%cid' => "$transaction->customer_id", '%fn' => "$transaction->customer_first_name",
 						 '%ln' => "$transaction->customer_last_name", '%total' => "$transaction->order_total"), WATCHDOG_INFO);
 
-				if (variable_get('foxycart_user_sync', true) == true
+				if (config_get('foxycart.settings', 'foxycart_user_sync') == true
 				&& (int)$transaction->is_anonymous == 0) {
-					$user = foxycart_update_drupal_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
+					$user = foxycart_update_backdrop_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
 					if ($user == FALSE) {
-						throw new Exception('Error matching FoxyCart user to Drupal user when processing datafeed.');
+						throw new Exception('Error matching FoxyCart user to Backdrop user when processing datafeed.');
 					}
 				}
 
@@ -228,7 +225,7 @@ function foxycart_datafeed($feed = null) {
 
 
 function fclink($text = 'FoxyCart') {
-	return '<a href="http://affiliate.foxycart.com/idevaffiliate.php?id=165">' . $text .'</a>';
+	return '<a href="https://foxy.io">' . $text .'</a>';
 }
 
 function foxycart_permission() {
@@ -242,7 +239,8 @@ function foxycart_permission() {
 
 function foxycart_admin_settings() {
 	global $base_root;
-	$path = drupal_get_path('module', 'foxycart');
+	$config = config('foxycart.settings');
+	$path = backdrop_get_path('module', 'foxycart');
 
 	$form['access'] = array(
 	'#type' => 'fieldset',
@@ -284,8 +282,8 @@ function foxycart_admin_settings() {
 
 	$form['auth']['foxycart_user_sync'] = array(
   	'#type' => 'checkbox',
-  	'#title' => t("Synchronize Drupal and FoxyCart User Accounts"),
-  	'#default_value' => variable_get('foxycart_user_sync', true),
+  	'#title' => t("Synchronize Backdrop and FoxyCart User Accounts"),
+  	'#default_value' => $config->get('foxycart_user_sync'),
     '#description' => t('This should be enabled if using FoxyCart\'s single sign on (SSO) feature. (Highly recommended)'),
   	'#required' => FALSE);
 
@@ -296,7 +294,7 @@ function foxycart_admin_settings() {
 	$form['display']['foxycart_show_logo'] = array(
   	'#type' => 'checkbox',
   	'#title' => t("Show FoxyCart Logo"),
-  	'#default_value' => variable_get('foxycart_show_logo', false),
+  	'#default_value' => $config->get('foxycart_show_logo'),
   	'#description' => t('Display the "Powered By FoxyCart" logo'),
   	'#required' => FALSE);
 
@@ -310,16 +308,18 @@ function foxycart_admin_settings() {
 }
 
 function foxycart_admin_settings_submit($form, &$form_state) {
-	variable_set('foxycart_subdomain', $form_state['values']['foxycart_subdomain']);
+    $config = config('foxycart.settings');
+	$config->set('foxycart_subdomain', $form_state['values']['foxycart_subdomain']);
 
 	if ($form_state['values']['foxycart_reset_apikey'] == 1) {
-		variable_del('foxycart_apikey');
+		$config->clear('foxycart_apikey');
 		foxycart_get_apikey();
 	}
-	variable_set('foxycart_user_sync', $form_state['values']['foxycart_user_sync']);
-	variable_set('foxycart_show_logo', $form_state['values']['foxycart_show_logo']);
+	$config->set('foxycart_user_sync', $form_state['values']['foxycart_user_sync']);
+	$config->set('foxycart_show_logo', $form_state['values']['foxycart_show_logo']);
+    $config->save();
 
-	drupal_set_message(t('The settings have been saved'));
+	backdrop_set_message(t('The settings have been saved'));
 }
 
 
@@ -456,7 +456,7 @@ function foxycart_purchase_link($text, $attributes, $options = array()) {
 
   $link_options = array_merge_recursive($link_options, $options);
 
-  return l($text, 'https://'.variable_get('foxycart_subdomain', '')."/cart", $link_options);
+  return l($text, 'https://' . config_get('foxycart.settings', 'foxycart_subdomain') . "/cart", $link_options);
 }
 
 /**
@@ -464,7 +464,7 @@ function foxycart_purchase_link($text, $attributes, $options = array()) {
 *
 * This returns a form that contains a single submit button that will add a product to a cart. Example:
 * @code
-*   print drupal_render(drupal_get_form('foxycart_purchase_link_form', "Add to cart", array(
+*   print backdrop_render(backdrop_get_form('foxycart_purchase_link_form', "Add to cart", array(
 *     'code' => "my-product-code",
 *     'name' => "My Product Name",
 *     'price' => "5"
@@ -477,10 +477,10 @@ function foxycart_purchase_link($text, $attributes, $options = array()) {
 *   Foxycart key => value array to be attached as a query. It should at least include 'code', 'name' and 'price'
 *
 * @return form
-*   A form array reader to be rendered using drupal_render()
+*   A form array reader to be rendered using backdrop_render()
 */
 function foxycart_purchase_link_form($form, &$form_state, $text, $attributes) {
-  $form['#action'] = 'https://'.variable_get('foxycart_subdomain', '')."/cart";
+  $form['#action'] = 'https://' . config_get('foxycart.settings', 'foxycart_subdomain') . "/cart";
   $form['purchase'] = array('#type' => 'submit', '#value' => $text);
 
   foreach ($attributes as $attr => $val) {

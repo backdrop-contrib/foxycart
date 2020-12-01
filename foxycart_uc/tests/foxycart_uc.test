@@ -2,28 +2,20 @@
 
 /**
  * @file
- * Foxypal / Ubercart Tests
+ * FoxyCart / Ubercart Tests
  */
-include_once("foxycart_datafeedtest.inc.php");
+include_once("../foxycart_uc_datafeedtest.inc.php");
 
-class FoxyCartUCTestCase extends DrupalWebTestCase {
+class FoxyCartUCTestCase extends BackdropWebTestCase {
 
   protected $adminUser;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'FoxyCart with UberCart',
-      'description' => 'Tests the supported UberCart features with FoxyCart',
-      'group' => 'FoxyPal',
-    );
-  }
 
   public function setUp() {
     // Enable any module that you will need in your tests.
     parent::setUp(array('foxycart_uc', 'foxycart', 'uc_store', 'uc_product', 'uc_order', 'uc_payment', 'uc_attribute', 'uc_product_kit', 'uc_stock', 'rules', 'rules_admin', 'uc_roles', 'devel'));
 
     // Create a store administrator user account.
-    $this->adminUser = $this->drupalCreateUser(array(
+    $this->adminUser = $this->backdropCreateUser(array(
       'administer store',
       'administer order workflow',
       'administer product classes',
@@ -45,13 +37,13 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       'administer product options'
     ));
 
-    $this->drupalLogin($this->adminUser); 
+    $this->backdropLogin($this->adminUser); 
     $this->setStockDecrementRule();
   }
 
 
   public function testEnableAddToCartButton() {
-    $this->drupalPost(
+    $this->backdropPost(
       'admin/store/settings/products',
       array('foxycart_uc_add_to_cart_qty' => TRUE),
       t('Save configuration')
@@ -61,10 +53,10 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       TRUE,
       t('Add to cart quantity is enabled')
     );  
-    $this->assertTrue(variable_get('foxycart_uc_add_to_cart_qty'), t('foxycart_uc_add_to_cart_qty variable set'));
+    $this->assertTrue(config_get('foxycart.settings', 'foxycart_uc_add_to_cart_qty'), t('foxycart_uc_add_to_cart_qty variable set'));
 
     $product = $this->createProduct(array('uid' => $this->adminUser->uid));
-    $this->drupalGet('node/' . $product->nid);   
+    $this->backdropGet('node/' . $product->nid);   
 
     $this->assertText(
       t('SKU: @model', array('@model' => $product->model)), t('Product model found.'));
@@ -73,7 +65,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
   }
 
    public function testAddToCartButtonDisabledForNoStock() {
-    $this->drupalPost(
+    $this->backdropPost(
       'admin/store/settings/products',
       array('foxycart_uc_add_to_cart_qty' => TRUE),
       t('Save configuration')
@@ -83,12 +75,12 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       TRUE,
       t('Add to cart quantity is enabled')
     );  
-    $this->assertTrue(variable_get('foxycart_uc_add_to_cart_qty'), t('foxycart_uc_add_to_cart_qty variable set'));
+    $this->assertTrue(config_get('foxycart.settings', 'foxycart_uc_add_to_cart_qty'), t('foxycart_uc_add_to_cart_qty variable set'));
 
     $product = $this->createProduct(array('uid' => $this->adminUser->uid));
     $this->setProductStock($product, 0);
 
-    $this->drupalGet('node/' . $product->nid);   
+    $this->backdropGet('node/' . $product->nid);   
 
     $this->assertText(
       t('SKU: @model', array('@model' => $product->model)), t('Product model found.'));
@@ -105,7 +97,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
   }
 */
   public function testXmlDataFeedStandardProduct() {
-    variable_set('foxycart_user_sync', false);
+    config_set('foxycart.settings', 'foxycart_user_sync', FALSE);
 
     $product = $this->createProduct(array('uid' => $this->adminUser->uid));
     $attribute = self::createAttribute();
@@ -184,18 +176,18 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
 
  function testRolePurchaseCheckout() {
     // Add role assignment to the test product.
-    $rid = $this->drupalCreateRole(array('access content'));
+    $rid = $this->backdropCreateRole(array('access content'));
     $role = user_role_load($rid);
     $product = $this->createProduct(array('uid' => $this->adminUser->uid));
     
-    $this->drupalPost('node/' . $product->nid . '/edit/features', array('feature' => 'role'), t('Add'));
+    $this->backdropPost('node/' . $product->nid . '/edit/features', array('feature' => 'role'), t('Add'));
     $edit = array(
       'uc_roles_role' => $rid,
       'end_override' => TRUE,
       'uc_roles_expire_relative_duration' => 1,
       'uc_roles_expire_relative_granularity' => 'day',
     );
-    $this->drupalPost(NULL, $edit, t('Save feature'));
+    $this->backdropPost(NULL, $edit, t('Save feature'));
 
     $xml_feed = foxycart_uc_test_get_order_XML($product, $this->adminUser);
     $xml_feed = foxycart_uc_encrypt_feed($xml_feed);
@@ -206,7 +198,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
     $this->assertTrue(isset($account->roles[$rid]), 'Existing user was granted role.');
 
     $order = $this->getLastOrder();
-    $this->drupalGet("/admin/store/orders/$order->order_id");
+    $this->backdropGet("/admin/store/orders/$order->order_id");
     $this->assertText('Customer granted user role');
     $this->assertText($role->name);
 
@@ -248,7 +240,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       'shippable' => TRUE,
     );
  
-    $product = $this->drupalCreateNode($product);
+    $product = $this->backdropCreateNode($product);
     $this->setProductStock($product);
     $this->addAttributeToProduct($product);
  
@@ -256,7 +248,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
   }
 
   public function setProductStock($product, $stock = NULL) {
-    $this->drupalGet('node/' . $product->nid . '/edit/stock');
+    $this->backdropGet('node/' . $product->nid . '/edit/stock');
 
     if ($stock == NULL) {
       $stock = rand(1, 1000);
@@ -266,7 +258,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       'stock[0][stock]' => $stock,
       'stock[0][threshold]' => rand(1, 100),
     );
-    $this->drupalPost(NULL, $edit, t('Save changes'));
+    $this->backdropPost(NULL, $edit, t('Save changes'));
     $this->assertText('Stock settings saved.');
     $this->assertTrue(uc_stock_is_active($product->model));
     $this->assertEqual($stock, uc_stock_level($product->model));
@@ -274,21 +266,21 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
   }
 
   public function setStockDecrementRule() {
-    $this->drupalGet('admin/config/workflow/rules');
+    $this->backdropGet('admin/config/workflow/rules');
     $this->assertText('uc_stock_decrement_on_order');
     
     // Remove the 'uc_checkout_action'
-    $this->drupalPost('admin/config/workflow/rules/reaction/manage/uc_stock_decrement_on_order/delete/event/uc_checkout_complete',
+    $this->backdropPost('admin/config/workflow/rules/reaction/manage/uc_stock_decrement_on_order/delete/event/uc_checkout_complete',
       array("confirm" => 1), t('Remove'));
     $this->assertText('has been removed.');
     
     // Add the payment gets entered action
-    $this->drupalPost('admin/config/workflow/rules/reaction/manage/uc_stock_decrement_on_order/add/event',
+    $this->backdropPost('admin/config/workflow/rules/reaction/manage/uc_stock_decrement_on_order/add/event',
       array("event" => 'uc_payment_entered'), t('Add'));
     $this->assertText('A payment gets entered for an order');
 
     // Verify the rules page is updated
-    $this->drupalGet('admin/config/workflow/rules');
+    $this->backdropGet('admin/config/workflow/rules');
     $this->assertText('A payment gets entered for an order');
 
     rules_clear_cache();
@@ -296,9 +288,9 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
 
   public static function createAttribute($data = array(), $save = TRUE) {
     $attribute = $data + array(
-      'name' => DrupalWebTestCase::randomName(8),
-      'label' => DrupalWebTestCase::randomName(8),
-      'description' => DrupalWebTestCase::randomName(8),
+      'name' => BackdropWebTestCase::randomName(8),
+      'label' => BackdropWebTestCase::randomName(8),
+      'description' => BackdropWebTestCase::randomName(8),
       'required' => mt_rand(0, 1) ? TRUE : FALSE,
       'display' => mt_rand(0, 3),
       'ordering' => mt_rand(-10, 10),
@@ -320,7 +312,7 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       ->fetchField();
     $option = $data + array(
       'aid' => $max_aid,
-      'name' => DrupalWebTestCase::randomName(8),
+      'name' => BackdropWebTestCase::randomName(8),
       'cost' => mt_rand(-500, 500),
       'price' => mt_rand(-500, 500),
       'weight' => mt_rand(-500, 500),
@@ -340,13 +332,13 @@ class FoxyCartUCTestCase extends DrupalWebTestCase {
       $option = self::createAttributeOption(array('aid' => $attribute->aid));
     }
 
-    $this->drupalGet('node/' . $product->nid . '/edit/attributes');
+    $this->backdropGet('node/' . $product->nid . '/edit/attributes');
     $this->assertText('You must first add attributes to this product.');
 
     $this->clickLink('Add an attribute');
     $this->assertText($attribute->name);
 
-    $this->drupalPost(NULL, array('add_attributes[' . $attribute->aid. ']' => 1), t('Add attributes'));
+    $this->backdropPost(NULL, array('add_attributes[' . $attribute->aid. ']' => 1), t('Add attributes'));
     $this->assertText('1 attribute has been added.');    
   }
 

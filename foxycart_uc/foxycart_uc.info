@@ -1,14 +1,12 @@
-
-; $Id$ 
-
-name = FoxyPal UC Cart Alternative
-package = FoxyPal
-description = Integrates FoxyCart with Drupal and Ubercart.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features. 
+name = FoxyCart UC Cart Alternative
+package = FoxyCart
+description = Integrates Foxy.io with Backdrop and Ubercart.  This module is an optional add-on that will utilize Ubercart as backend store, but use FoxyCart for the cart, checkout and shipping features. 
 dependencies[] = foxycart
 dependencies[] = uc_store
 dependencies[] = uc_product
 dependencies[] = uc_order
 dependencies[] = uc_payment
-files[] = tests/foxycart_uc.test
-core = 7.x
+
+backdrop = 1.x
+type = module
 

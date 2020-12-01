@@ -79,11 +79,11 @@ function foxycart_uc_df_add_shipping_to_order(&$order, $transaction) {
 
 
 function foxycart_uc_df_create_order($transaction) {
-	if (variable_get('foxycart_user_sync', true) == true
+	if (config_get('foxycart.settings', 'foxycart_user_sync') == true
 			&& (int)$transaction->is_anonymous == 0) {		
 		$user = user_load_by_mail((string)$transaction->customer_email);
 		if ($user == FALSE) {
-			throw new Exception('Error matching FoxyCart user to Drupal user when creating order from datafeed.');
+			throw new Exception('Error matching FoxyCart user to Backdrop user when creating order from datafeed.');
 		}
 		$order = uc_order_new($user->uid, 'post_checkout');
 	} else {

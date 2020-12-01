@@ -5,10 +5,6 @@
 /**
  * @file foxycart.install
  *
- * Module to provide integration of Drupal and FoxyCart.
- *
- * Copyright (c) 2011 Jason York -  http://www.yorkspace.com
- *
  */
 
 /**
@@ -39,18 +35,29 @@ function foxycart_requirements($phase) {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Upgrade Foxy settings from variables to config.
  */
- function foxycart_uninstall() {
-  variable_del('foxycart_yourdomain');
-  variable_del('foxycart_subdomain');
-  variable_del('foxycart_show_logo');
-  variable_del('foxycart_datafeedkey');
-  variable_del('foxycart_apikey');
-  variable_del('foxycart_user_sync');
-  variable_del('foxycart_enable_sso');
-  variable_del('foxycart_allow_non_auth_checkout');
+function foxycart_update_1000() {
+  // Migrate variables to config.
+  $config = config('foxycart.settings');
+  $config->set('foxycart_yourdomain', update_variable_get('foxycart_yourdomain', 1));
+  $config->set('foxycart_subdomain', update_variable_get('foxycart_subdomain', ''));
+  $config->set('foxycart_show_logo', update_variable_get('foxycart_show_logo', FALSE));
+  $config->set('foxycart_datafeedkey', update_variable_get('foxycart_datafeedkey', 1));
+  $config->set('foxycart_apikey', update_variable_get('foxycart_apikey', ''));
+  $config->set('foxycart_user_sync', update_variable_get('foxycart_user_sync', TRUE));
+  $config->set('foxycart_enable_sso', update_variable_get('foxycart_enable_sso', 1));
+  $config->set('foxycart_allow_non_auth_checkout', update_variable_get('foxycart_allow_non_auth_checkout', 1));
+  $config->save();
+
+  // Delete variables.
+  update_variable_del('foxycart_yourdomain');
+  update_variable_del('foxycart_subdomain');
+  update_variable_del('foxycart_show_logo');
+  update_variable_del('foxycart_datafeedkey');
+  update_variable_del('foxycart_apikey');
+  update_variable_del('foxycart_user_sync');
+  update_variable_del('foxycart_enable_sso');
+  update_variable_del('foxycart_allow_non_auth_checkout');
 }
 
-
-?>

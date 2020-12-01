@@ -1,16 +1,11 @@
 <?php
 
-// $Id$
-
 /**
  *
  *
  * @file foxycart_uc.module
  *
  * Module to provide integration of FoxyCart with Ubercart.
- *
- * Copyright (c) 2013 Jason York
- *
  */
 
 
@@ -53,7 +48,7 @@ function foxycart_uc_stock_query() {
   $response = array( "model" => $model, "stock_level" => $stockLevel, "price" => uc_currency_format($price));
 
   // if there is some response, print it
-  drupal_json_output($response);
+  backdrop_json_output($response);
 }
 
 function foxycart_uc_attribute_price($nid, $combinations) {
@@ -110,8 +105,8 @@ function foxycart_uc_node_view( $node, $view_mode, $langcode ) {
     // Build the 'add to cart' form, and use the updated variant based on data
     // provided by the form (e.g. attribute default options).
     if ( $variant->nid && empty( $variant->data['display_only'] ) ) {
-      $add_to_cart_form = drupal_get_form( 'uc_product_add_to_cart_form_' . $variant->nid, $variant );
-      if ( variable_get( 'uc_product_update_node_view', FALSE ) ) {
+      $add_to_cart_form = backdrop_get_form( 'uc_product_add_to_cart_form_' . $variant->nid, $variant );
+      if (config_get('uc_product.settings', 'uc_product_update_node_view') ) {
         $variant = $add_to_cart_form['node']['#value'];
       }
     }
@@ -170,12 +165,12 @@ function foxycart_uc_form_uc_product_settings_form_alter(&$form, &$form_state) {
   $form['product']['foxycart_uc_add_to_cart_qty'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display an optional quantity field in the <em>Add to Cart</em> form.'),
-    '#default_value' => variable_get('foxycart_uc_add_to_cart_qty', FALSE),
+    '#default_value' => config_get('foxycart.settings', 'foxycart_uc_add_to_cart_qty'),
   );
   $form['product']['foxycart_uc_update_node_view'] = array(
     '#type' => 'checkbox',
     '#title' => t('Update product display based on customer selections'),
-    '#default_value' => variable_get('foxycart_uc_update_node_view', FALSE),
+    '#default_value' => config_get('foxycart.settings', 'foxycart_uc_update_node_view'),
     '#description' => t('Check this box to dynamically update the display of product information such as display-price or weight based on customer input on the add-to-cart form (e.g. selecting a particular attribute option).'),
   );
   $form['#submit'][] = 'foxcart_uc_form_uc_product_settings_form_submit';  
@@ -183,7 +178,7 @@ function foxycart_uc_form_uc_product_settings_form_alter(&$form, &$form_state) {
 
 function foxcart_uc_form_uc_product_settings_form_submit($form, &$form_state) {
   if (isset($form_state['values']['foxycart_uc_add_to_cart_qty'])) {
-    variable_set('uc_product_add_to_cart_qty', $form_state['values']['foxycart_uc_add_to_cart_qty']);
+    config_set('foxycart.settings', 'uc_product_add_to_cart_qty', $form_state['values']['foxycart_uc_add_to_cart_qty']);
   }
 }
 
@@ -392,7 +387,7 @@ function foxycart_uc_modify_cart_form( &$form ) {
     ),      
   );
 
-  if ( $node->default_qty > 0 && variable_get( 'foxycart_uc_add_to_cart_qty', FALSE ) ) {
+  if ( $node->default_qty > 0 && config_get('foxycart.settings', 'foxycart_uc_add_to_cart_qty') ) {
     $form['actions'][foxycart_get_product_attribute( $node->model, 'quantity', '--OPEN--' )] = array(
       '#type' => 'textfield',
       '#title' => t( 'Quantity' ),

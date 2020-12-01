@@ -1,8 +1,10 @@
+name = FoxyCart
+package = FoxyCart
+description = Provides integration of Foxy.io with Backdrop
+backdrop = 1.x
+type = module
 
-; $Id$ 
-
-name = FoxyPal
-package = FoxyPal
-description = Provides integration of FoxyCart with Drupal
-core = 7.x
+tag[] = foxy
+tag[] = ubercart
+tag[] = e-commerce
 
