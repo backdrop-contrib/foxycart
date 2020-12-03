@@ -1,7 +1,7 @@
 FoxyCart
 ========
 
-The FoxyCart module makes it extremely easy to quick to integrate with the 
+The FoxyCart module makes it extremely easy to quick to integrate with the
 [Foxy](https://www.foxy.io) e-commerce system. This module provides:
 
 * Automatic inclusion of necessary foxy.io css and javascript files to enable
@@ -11,10 +11,10 @@ The FoxyCart module makes it extremely easy to quick to integrate with the
   account to complete checkout with FoxyCart.
 * Foxy datafeed logging. Transactions reported by Foxy are logged into the
   Backdrop logging system.
-  
+
 One of FoxyCart's biggest benefits is to act as a substitute for UberCart's
 checkout process while keeping the back-end system. This allows for a quick and
-safe checkout experience and a versatile product administration system. The 
+safe checkout experience and a versatile product administration system. The
 FoxyCart Ubercart Alternative module is separately enabled to provide these
 additional Foxy features:
 
@@ -33,7 +33,9 @@ Configuration
 
 * Go to <https://foxy.io>,
 * Sign up or log in with your account.
-* Navigate to Administer -> FoxyCart for configuration and detailed help.
+* Navigate to Administer -> FoxyCart for configuration.
+* See https://github.com/backdrop-contrib/foxycart/wiki/Setup-instructions for
+  more information.
 
 Issues
 ------

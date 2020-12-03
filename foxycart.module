@@ -9,9 +9,19 @@
 // Before enabling, make sure the devel module is enabled
 define("FOXYCART_DEBUG", FALSE);
 
-include_once "includes/foxycart_help.inc.php";
 include_once "includes/foxycart_user.inc.php";
 
+/**
+ * Implements hook_config_info().
+ */
+function foxycart_config_info() {
+  return array(
+    'foxycart.settings' => array(
+      'label' => t('FoxyCart settings'),
+      'group' => t('Configuration'),
+    ),
+  );
+}
 
 function foxycart_init() {
 	if (strlen(foxycart_get_domain())) {
@@ -61,13 +71,6 @@ function foxycart_menu() {
   	'page arguments' => array('foxycart_admin_settings'),
   	'weight' => '1');
 
-	$items['admin/foxycart/help'] = array(
-  	'title' => 'Help',
-  	'description' => 'Detailed Instructions on Using Backdrop FoxyCart',
-  	'access arguments' => array('access administration pages'),
-   	'page callback' => 'foxycart_detailed_help',
-  	'weight' => '2');
-
 	$items['foxycart/datafeed'] = array(
 	'title' => 'Foxy Datafeed',
  	'type' => MENU_CALLBACK,
@@ -84,15 +87,6 @@ function foxycart_menu() {
 	'access callback' => TRUE);
 
 	return $items;
-}
-
-function foxycart_help($path, $arg) {
-	switch ($path) {
-		case 'admin/help#foxycart':
-			return t('The FoxyCart module integrates the ' . fclink() .' system with Backdrop');
-		case 'admin/foxycart/settings':
-			return t('Configures FoxyCart Backdrop Settings');
-	}
 }
 
 function foxycart_theme($existing, $type, $theme, $path) {
@@ -134,14 +128,15 @@ function foxycart_get_domain() {
 }
 
 function foxycart_get_apikey() {
-    $config = config('foxycart.settings');
+  $config = config('foxycart.settings');
+
 	$key = $config->get('foxycart_apikey');
 	if ($key == '') {
 		$key = "fx5pl9".hash_hmac('sha256',rand(1000,65535),"soi42".time());
-		$config->set('foxycart_apikey');
+		$config->set('foxycart_apikey', $key);
 		$config->save();
-		$test = $config->get('foxycart_apikey');
 	}
+
 	return $key;
 }
 

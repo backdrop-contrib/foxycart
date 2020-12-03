@@ -1,0 +1,12 @@
+{
+  "_config_name": "foxycart.settings",
+  "foxycart_subdomain": "",
+  "foxycart_apikey": "",
+  "foxycart_user_sync": true,
+  "foxycart_show_logo": false,
+  "foxycart_yourdomain": true,
+  "foxycart_datafeedkey": true,
+  "foxycart_enable_sso": true,
+  "foxycart_allow_non_auth_checkout": true,
+}
+
