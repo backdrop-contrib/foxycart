@@ -4,8 +4,7 @@ FoxyCart
 The FoxyCart module makes it extremely easy to quick to integrate with the
 [Foxy](https://www.foxy.io) e-commerce system. This module provides:
 
-* Automatic inclusion of necessary foxy.io css and javascript files to enable
-  your site.
+* Automatic inclusion of necessary foxy.io javascript file to enable your site.
 * Theme-able shopping cart and status blocks.
 * Tight single-sign on integration with Backdrop. Customers use their Backdrop
   account to complete checkout with FoxyCart.

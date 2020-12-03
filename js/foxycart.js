@@ -30,13 +30,13 @@
       }
       $("#fc_cart_contents").show();
       $("#fc_cart_items").html(cart);
-      $("#fc_cart_message").html("");
+      $("#fc_cart_message").hide();
       $(".fc_cart_link").show();
       $("#fc_minicart_empty, .fc_minicart_empty").hide();
     } else {
       $("#fc_cart_contents").hide();
       $(".fc_cart_link").hide();
-      $("#fc_cart_message").html("Your shopping cart is empty");
+      $("#fc_cart_message").show();
       $("#fc_minicart_empty, .fc_minicart_empty").show();
     }
   }

@@ -26,7 +26,7 @@ function foxycart_config_info() {
 function foxycart_init() {
   if (strlen(foxycart_get_domain())) {
 
-    /* Include the required Javascript and CSS from foxycart.com */
+    /* Include the required Javascript from foxycart.com */
     $cdn_domain = foxycart_get_domain();
     if (substr_compare($cdn_domain, ".foxycart.com", -strlen(".foxycart.com"), strlen(".foxycart.com")) === 0) {
       $cdn_domain = str_replace(".foxycart.com", "", $cdn_domain);
@@ -34,8 +34,6 @@ function foxycart_init() {
 
     backdrop_add_js('//cdn.foxycart.com/' . $cdn_domain . '/loader.js', array('type' => 'external', 'defer' => true, 'async' => true));
     backdrop_add_js(backdrop_get_path('module', 'foxycart') .'/js/foxycart.js');
-
-    backdrop_add_css(backdrop_get_path('module', 'foxycart') .'/css/foxycart.css');
   }
 }
 
@@ -89,18 +87,23 @@ function foxycart_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_theme().
+ */
 function foxycart_theme($existing, $type, $theme, $path) {
   return array(
-      'foxycart_summary_cart_block' => array(
-      'variables' => array('fc_domain' => foxycart_get_domain()),
-      'template' => 'foxycart-summary-cart-block'
+    'foxycart_summary_cart_block' => array(
+      'variables' => array(
+        'fc_domain' => foxycart_get_domain(),
+      ),
+      'template' => 'templates/foxycart-summary-cart-block'
     ),
     'foxycart_full_cart_block' => array(
       'variables' => array(
         'fc_domain' => foxycart_get_domain(),
-         'logo' => '',
+        'logo' => '',
       ),
-      'template' => 'foxycart-full-cart-block',
+      'template' => 'templates/foxycart-full-cart-block',
     ),
   );
 }
@@ -161,12 +164,12 @@ function foxycart_block_view($delta = 0) {
   switch ($delta) {
     case 0:
       // FoxyCart: Cart Summary
-      $block['subject'] = ''; // Title is displayed in the content so it can be hidden
+      $block['subject'] = t('Your cart');
       $block['content'] = theme('foxycart_summary_cart_block', array('fc_domain' => foxycart_get_domain()));
       break;
     case 1:
       // FoxyCart: Full Cart
-      $block['subject'] = '';
+      $block['subject'] = t('Your cart');
       $block['content'] = foxycart_get_full_cart_block();
       break;
   }
