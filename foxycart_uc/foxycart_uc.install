@@ -10,23 +10,23 @@
 
 
 function foxycart_uc_requirements($phase) {
-	if ($phase == 'runtime' || $phase == 'install') {
-		
-		if (module_exists('uc_cart') ){
-			$description = t("The \"Ubercart Cart\" module is not compatible with \"FoxyCart UC Cart Alternative\".  You must disable one of them");
-			$severity = REQUIREMENT_ERROR;
-			$value = t('Conflict');
-			
-		    $requirements['foxycart_uc'] = array(
-		      'title' => t("Module Compatiblity"),
-		      'severity' => $severity,
-		      'value' => $value,
-		      'description' => $description,
-		    );
-			return $requirements;
-		}		
+  if ($phase == 'runtime' || $phase == 'install') {
 
-	}
+    if (module_exists('uc_cart') ){
+      $description = t("The \"Ubercart Cart\" module is not compatible with \"FoxyCart UC Cart Alternative\".  You must disable one of them");
+      $severity = REQUIREMENT_ERROR;
+      $value = t('Conflict');
+
+        $requirements['foxycart_uc'] = array(
+          'title' => t("Module Compatiblity"),
+          'severity' => $severity,
+          'value' => $value,
+          'description' => $description,
+        );
+      return $requirements;
+    }
+
+  }
 }
 
 /**

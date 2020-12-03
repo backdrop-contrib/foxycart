@@ -11,27 +11,27 @@
  * Implementation of hook_requirements
  */
 function foxycart_requirements($phase) {
-	if ($phase == 'runtime' || $phase == 'install') {
-		
-		if (!extension_loaded("curl")) {
-			$description = t("The PHP CURL extension must be enabled for module \"FoxyCart\" to work correctly. See the <a href=\"http://www.php.net/manual/intro.curl.php\">PHP Manual</a> for more info.");
-			$severity = REQUIREMENT_ERROR;
-			$value = t('Not Enabled');
-		} else {
-			$description = "";
-			$severity = REQUIREMENT_OK;
-			$value = t('Enabled');
-		}
+  if ($phase == 'runtime' || $phase == 'install') {
 
-	    $requirements['foxycart'] = array(
-	      'title' => t("CURL Extension"),
-	      'severity' => $severity,
-	      'value' => $value,
-	      'description' => $description,
-	    );
+    if (!extension_loaded("curl")) {
+      $description = t("The PHP CURL extension must be enabled for module \"FoxyCart\" to work correctly. See the <a href=\"http://www.php.net/manual/intro.curl.php\">PHP Manual</a> for more info.");
+      $severity = REQUIREMENT_ERROR;
+      $value = t('Not Enabled');
+    } else {
+      $description = "";
+      $severity = REQUIREMENT_OK;
+      $value = t('Enabled');
+    }
 
-		return $requirements;
-	}
+      $requirements['foxycart'] = array(
+        'title' => t("CURL Extension"),
+        'severity' => $severity,
+        'value' => $value,
+        'description' => $description,
+      );
+
+    return $requirements;
+  }
 }
 
 /**

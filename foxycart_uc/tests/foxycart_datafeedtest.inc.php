@@ -32,11 +32,11 @@ $XMLattributes .= "
     }
     $product_total_adjusted = $product->sell_price + $product_adjustments;
     $order_total = $product_total_adjusted + $tax + $shipping;
-    
+
 $XMLOutput = <<<XML
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <foxydata>
-	<transactions>
+  <transactions>
         <transaction>
             <id>123123123</id>
             <store_id>123</store_id>
@@ -138,7 +138,7 @@ $XMLOutput = <<<XML
             <shipto_addresses/>
             <attributes/>
         </transaction>
-	</transactions>
+  </transactions>
 </foxydata>
 XML;
 

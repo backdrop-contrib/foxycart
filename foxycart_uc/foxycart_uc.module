@@ -173,7 +173,7 @@ function foxycart_uc_form_uc_product_settings_form_alter(&$form, &$form_state) {
     '#default_value' => config_get('foxycart.settings', 'foxycart_uc_update_node_view'),
     '#description' => t('Check this box to dynamically update the display of product information such as display-price or weight based on customer input on the add-to-cart form (e.g. selecting a particular attribute option).'),
   );
-  $form['#submit'][] = 'foxcart_uc_form_uc_product_settings_form_submit';  
+  $form['#submit'][] = 'foxcart_uc_form_uc_product_settings_form_submit';
 }
 
 function foxcart_uc_form_uc_product_settings_form_submit($form, &$form_state) {
@@ -220,8 +220,8 @@ function foxycart_uc_get_product_option_fields( &$product ) {
       $form_option['#type'] = 'textfield';
       $form_option['#default_value'] = '';
       $optionName = foxycart_get_product_attribute( $product->model, urlencode( $name ), '--OPEN--' );
-      $form_option['#name'] = $optionName;  
-      break;   
+      $form_option['#name'] = $optionName;
+      break;
     }
 
     $data = array( 'display_only' => TRUE ) + $product->data;
@@ -256,15 +256,15 @@ function foxycart_uc_get_product_option_fields( &$product ) {
 
         if ( in_array( $attribute->aid, $priced_attributes ) ) {
           $adjustment = $variant['display_price']['#value'] - $base['display_price']['#value'];
- 
-          
+
+
           if ( $adjustment != 0 ) {
             $fcPriceModifier = $adjustment > 0 ? '+' : '';
             $fcPriceModifier .= $adjustment;
           }
 
           $display_price = ( $adjustment > 0 ? '+' : '-' ) . uc_currency_format( abs( $adjustment ) );
-        }   
+        }
 
         $weight_adjustment = $variant['weight']['#amount'] - $base['weight']['#amount'];
         if ( $weight_adjustment != 0 ) {
@@ -380,11 +380,11 @@ function foxycart_uc_modify_cart_form( &$form ) {
   $form[foxycart_get_product_attribute( $node->model, 'nid', $node->nid )] = array( '#type' => 'hidden', '#value' => $node->nid );
   foxycart_uc_add_product_categories( $node, $form );
 
-  $form['actions'] = array( 
-    '#type' => 'actions', 
+  $form['actions'] = array(
+    '#type' => 'actions',
     '#attributes' => array(
       'class' => array('container-inline' ),
-    ),      
+    ),
   );
 
   if ( $node->default_qty > 0 && config_get('foxycart.settings', 'foxycart_uc_add_to_cart_qty') ) {
@@ -415,7 +415,7 @@ function foxycart_uc_modify_cart_form( &$form ) {
       '#attributes' => array(
         'class' => array( 'node-add-to-cart' ),
       ),
-    );    
+    );
   } else {
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -426,7 +426,7 @@ function foxycart_uc_modify_cart_form( &$form ) {
       '#attributes' => array(
         'class' => array( 'node-add-to-cart' ),
       ),
-    );    
+    );
   }
 
 
@@ -449,7 +449,7 @@ function alternate_sku_for_attributes($nid, $attributes) {
     }
   }
   ksort($combination);
-  $model = db_query("SELECT model FROM {uc_product_adjustments} WHERE nid = :nid AND combination LIKE :combo", array(':nid' => $nid, ':combo' => serialize($combination)))->fetchField(); 
+  $model = db_query("SELECT model FROM {uc_product_adjustments} WHERE nid = :nid AND combination LIKE :combo", array(':nid' => $nid, ':combo' => serialize($combination)))->fetchField();
 
   return $model;
 }

@@ -24,352 +24,354 @@ function foxycart_config_info() {
 }
 
 function foxycart_init() {
-	if (strlen(foxycart_get_domain())) {
+  if (strlen(foxycart_get_domain())) {
 
-		/* Include the required Javascript and CSS from foxycart.com */
-		$cdn_domain = foxycart_get_domain();
-		if (substr_compare($cdn_domain, ".foxycart.com", -strlen(".foxycart.com"), strlen(".foxycart.com")) === 0) {
-			$cdn_domain = str_replace(".foxycart.com", "", $cdn_domain);
-		}
+    /* Include the required Javascript and CSS from foxycart.com */
+    $cdn_domain = foxycart_get_domain();
+    if (substr_compare($cdn_domain, ".foxycart.com", -strlen(".foxycart.com"), strlen(".foxycart.com")) === 0) {
+      $cdn_domain = str_replace(".foxycart.com", "", $cdn_domain);
+    }
 
-		backdrop_add_js('//cdn.foxycart.com/' . $cdn_domain . '/loader.js', array('type' => 'external', 'defer' => true, 'async' => true));
-		backdrop_add_js(backdrop_get_path('module', 'foxycart') .'/js/foxycart.js');
+    backdrop_add_js('//cdn.foxycart.com/' . $cdn_domain . '/loader.js', array('type' => 'external', 'defer' => true, 'async' => true));
+    backdrop_add_js(backdrop_get_path('module', 'foxycart') .'/js/foxycart.js');
 
-		backdrop_add_css(backdrop_get_path('module', 'foxycart') .'/css/foxycart.css');
-	}
+    backdrop_add_css(backdrop_get_path('module', 'foxycart') .'/css/foxycart.css');
+  }
 }
 
 function foxycart_test() {
-	$testuser = "test@example.com";
-	print "<pre>update:<br/>";
-//	print_r(htmlentities(foxycart_api_update_user($testuser, "test123")->asXML() ));
-	print "get: <br/><br/>";
+  $testuser = "test@example.com";
+  print "<pre>update:<br/>";
+//  print_r(htmlentities(foxycart_api_update_user($testuser, "test123")->asXML() ));
+  print "get: <br/><br/>";
 
-	print_r(htmlentities(foxycart_api_getuser($testuser)->asXML()));
+  print_r(htmlentities(foxycart_api_getuser($testuser)->asXML()));
 
-	//print_r($order);
-	print "</pre>";
-	exit;
+  //print_r($order);
+  print "</pre>";
+  exit;
 }
 
 function foxycart_menu() {
-	$items = array();
+  $items = array();
 
-	// Admin user pages
-	$items['admin/foxycart'] = array(
+  // Admin user pages
+  $items['admin/foxycart'] = array(
     'title' => 'FoxyCart',
-  	'page callback' => 'backdrop_get_form',
-  	'access arguments' => array('access administration pages'),
-  	'page arguments' => array('foxycart_admin_settings'),
-  	'file' => 'foxycart.module');
+    'page callback' => 'backdrop_get_form',
+    'access arguments' => array('access administration pages'),
+    'page arguments' => array('foxycart_admin_settings'),
+    'file' => 'foxycart.module');
 
-	$items['admin/foxycart/settings'] = array(
-  	'title' => 'Settings',
-  	'description' => 'Configure FoxyCart Backdrop Settings',
-  	'page callback' => 'backdrop_get_form',
-  	'access arguments' => array('access administration pages'),
-  	'page arguments' => array('foxycart_admin_settings'),
-  	'weight' => '1');
+  $items['admin/foxycart/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Configure FoxyCart Backdrop Settings',
+    'page callback' => 'backdrop_get_form',
+    'access arguments' => array('access administration pages'),
+    'page arguments' => array('foxycart_admin_settings'),
+    'weight' => '1');
 
-	$items['foxycart/datafeed'] = array(
-	'title' => 'Foxy Datafeed',
- 	'type' => MENU_CALLBACK,
-	'description' => 'Process the Foxy datafeed',
-	'page callback' => 'foxycart_datafeed',
-	'access callback' => TRUE,
-	'weight' => '4');
+  $items['foxycart/datafeed'] = array(
+  'title' => 'Foxy Datafeed',
+   'type' => MENU_CALLBACK,
+  'description' => 'Process the Foxy datafeed',
+  'page callback' => 'foxycart_datafeed',
+  'access callback' => TRUE,
+  'weight' => '4');
 
-	$items['foxycart/sso'] = array(
-	'title' => 'FoxyCart SSO',
- 	'type' => MENU_CALLBACK,
-	'description' => 'Process Foxycart SSO',
-	'page callback' => 'foxycart_process_sso',
-	'access callback' => TRUE);
+  $items['foxycart/sso'] = array(
+  'title' => 'FoxyCart SSO',
+   'type' => MENU_CALLBACK,
+  'description' => 'Process Foxycart SSO',
+  'page callback' => 'foxycart_process_sso',
+  'access callback' => TRUE);
 
-	return $items;
+  return $items;
 }
 
 function foxycart_theme($existing, $type, $theme, $path) {
-	return array(
-	    'foxycart_summary_cart_block' => array(
-		  'variables' => array('fc_domain' => foxycart_get_domain()),
-	      'template' => 'foxycart-summary-cart-block'
-		)
-		,'foxycart_full_cart_block' => array(
-		  'variables' => array('fc_domain' => foxycart_get_domain(),
-	                           'logo'      => ''),
-	      'template' => 'foxycart-full-cart-block'
-		)
-	);
+  return array(
+      'foxycart_summary_cart_block' => array(
+      'variables' => array('fc_domain' => foxycart_get_domain()),
+      'template' => 'foxycart-summary-cart-block'
+    ),
+    'foxycart_full_cart_block' => array(
+      'variables' => array(
+        'fc_domain' => foxycart_get_domain(),
+         'logo' => '',
+      ),
+      'template' => 'foxycart-full-cart-block',
+    ),
+  );
 }
 
 function foxycart_get_full_cart_block() {
-	global $base_root;
+  global $base_root;
 
-	$path = backdrop_get_path('module', 'foxycart');
-	if (config_get('foxycart.settings', 'foxycart_show_logo'))
-	{
-		$fc_link = fclink(theme('image', array('path' =>  $path . '/images/powered-by-foxycart-80x15.png', 'alt' => t('Powered by Foxy Ecommerce'), 'title' => t('Powered by Foxy Ecommerce'), 'attributes' => array('id' => 'fc_full_cart_logo'))));
-	}
-	else
-	{
-		$fc_link = "";
-	}
+  $path = backdrop_get_path('module', 'foxycart');
+  if (config_get('foxycart.settings', 'foxycart_show_logo'))
+  {
+    $fc_link = fclink(theme('image', array('path' =>  $path . '/images/powered-by-foxycart-80x15.png', 'alt' => t('Powered by Foxy Ecommerce'), 'title' => t('Powered by Foxy Ecommerce'), 'attributes' => array('id' => 'fc_full_cart_logo'))));
+  }
+  else
+  {
+    $fc_link = "";
+  }
 
-	return theme('foxycart_full_cart_block', array('fc_domain' => foxycart_get_domain(), 'logo' => $fc_link));
+  return theme('foxycart_full_cart_block', array('fc_domain' => foxycart_get_domain(), 'logo' => $fc_link));
 }
 
 function foxycart_get_domain() {
-	$domain = config_get('foxycart.settings', 'foxycart_subdomain');
-	if ( (strlen($domain) > 0) && (strpos($domain, '.') === FALSE)) {
-		$domain .= ".foxycart.com";
-	}
-	return $domain;
+  $domain = config_get('foxycart.settings', 'foxycart_subdomain');
+  if ( (strlen($domain) > 0) && (strpos($domain, '.') === FALSE)) {
+    $domain .= ".foxycart.com";
+  }
+  return $domain;
 }
 
 function foxycart_get_apikey() {
   $config = config('foxycart.settings');
 
-	$key = $config->get('foxycart_apikey');
-	if ($key == '') {
-		$key = "fx5pl9".hash_hmac('sha256',rand(1000,65535),"soi42".time());
-		$config->set('foxycart_apikey', $key);
-		$config->save();
-	}
+  $key = $config->get('foxycart_apikey');
+  if ($key == '') {
+    $key = "fx5pl9".hash_hmac('sha256',rand(1000,65535),"soi42".time());
+    $config->set('foxycart_apikey', $key);
+    $config->save();
+  }
 
-	return $key;
+  return $key;
 }
 
 /**
  * Implements hook_block_info().
  */
 function foxycart_block_info() {
-	$blocks = array();
-	$blocks[0]['info'] = 'FoxyCart: Cart Summary';
-	$blocks[1]['info'] = 'FoxyCart: Full Cart';
+  $blocks = array();
+  $blocks[0]['info'] = 'FoxyCart: Cart Summary';
+  $blocks[1]['info'] = 'FoxyCart: Full Cart';
 
-	return $blocks;
+  return $blocks;
 }
 
 /**
  * Implements hook_block_view().
  */
 function foxycart_block_view($delta = 0) {
-	$block = array();
-	switch ($delta) {
-		case 0:
-			// FoxyCart: Cart Summary
-			$block['subject'] = ''; // Title is displayed in the content so it can be hidden
-			$block['content'] = theme('foxycart_summary_cart_block', array('fc_domain' => foxycart_get_domain()));
-			break;
-		case 1:
-			// FoxyCart: Full Cart
-			$block['subject'] = '';
-			$block['content'] = foxycart_get_full_cart_block();
-			break;
-	}
+  $block = array();
+  switch ($delta) {
+    case 0:
+      // FoxyCart: Cart Summary
+      $block['subject'] = ''; // Title is displayed in the content so it can be hidden
+      $block['content'] = theme('foxycart_summary_cart_block', array('fc_domain' => foxycart_get_domain()));
+      break;
+    case 1:
+      // FoxyCart: Full Cart
+      $block['subject'] = '';
+      $block['content'] = foxycart_get_full_cart_block();
+      break;
+  }
 
-	return $block;
+  return $block;
 
 }
 
 /* Process the datafeed supplied by FoxyCart.com after an order is processed */
 function foxycart_datafeed($feed = null) {
-	if ($feed == null && isset($_POST['FoxyData'])) {
-		$feed = $_POST['FoxyData'];
-	}
-	foxycart_log("datafeed: Starting");
-	foxycart_log("datafeed: Got FoxyData");
-	try {
-		$XMLOutput_decrypted = urldecode($feed);
+  if ($feed == null && isset($_POST['FoxyData'])) {
+    $feed = $_POST['FoxyData'];
+  }
+  foxycart_log("datafeed: Starting");
+  foxycart_log("datafeed: Got FoxyData");
+  try {
+    $XMLOutput_decrypted = urldecode($feed);
 
-		$XMLOutput_decrypted = foxycart_decrypt_rc4(foxycart_get_apikey(),$XMLOutput_decrypted);
-		$data = simplexml_load_string($XMLOutput_decrypted, 'SimpleXMLElement', LIBXML_NOCDATA);
-		foxycart_log(print_r($data, true));
-		if (is_object($data)) {
-			foxycart_log("datafeed: Got data");
-			foreach ($data->transactions[0] as $transaction) {
-				foxycart_log("datafeed: Processing transaction");
+    $XMLOutput_decrypted = foxycart_decrypt_rc4(foxycart_get_apikey(),$XMLOutput_decrypted);
+    $data = simplexml_load_string($XMLOutput_decrypted, 'SimpleXMLElement', LIBXML_NOCDATA);
+    foxycart_log(print_r($data, true));
+    if (is_object($data)) {
+      foxycart_log("datafeed: Got data");
+      foreach ($data->transactions[0] as $transaction) {
+        foxycart_log("datafeed: Processing transaction");
 
-				watchdog('foxycart', 'Recevied datafeed for transaction id <a href="https://admin.foxycart.com/admin.php?ThisAction=TransactionHistory&trans_id=%tid">%tid</a>, customer id %cid, %fn %ln. Order total: %total.',
-				array('%tid' => "$transaction->id", '%cid' => "$transaction->customer_id", '%fn' => "$transaction->customer_first_name",
-						 '%ln' => "$transaction->customer_last_name", '%total' => "$transaction->order_total"), WATCHDOG_INFO);
+        watchdog('foxycart', 'Recevied datafeed for transaction id <a href="https://admin.foxycart.com/admin.php?ThisAction=TransactionHistory&trans_id=%tid">%tid</a>, customer id %cid, %fn %ln. Order total: %total.',
+        array('%tid' => "$transaction->id", '%cid' => "$transaction->customer_id", '%fn' => "$transaction->customer_first_name",
+             '%ln' => "$transaction->customer_last_name", '%total' => "$transaction->order_total"), WATCHDOG_INFO);
 
-				if (config_get('foxycart.settings', 'foxycart_user_sync') == true
-				&& (int)$transaction->is_anonymous == 0) {
-					$user = foxycart_update_backdrop_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
-					if ($user == FALSE) {
-						throw new Exception('Error matching FoxyCart user to Backdrop user when processing datafeed.');
-					}
-				}
+        if (config_get('foxycart.settings', 'foxycart_user_sync') == true
+        && (int)$transaction->is_anonymous == 0) {
+          $user = foxycart_update_backdrop_user($transaction->customer_id, $transaction->customer_email, $transaction->customer_password, $user_id = NULL);
+          if ($user == FALSE) {
+            throw new Exception('Error matching FoxyCart user to Backdrop user when processing datafeed.');
+          }
+        }
 
-				if (module_exists('foxycart_uc')) {
-					foxycart_log("datafeed: creating UC order");
-					foxycart_uc_df_create_order($transaction);
-				}
-			}
-			foxycart_log("datafeed: success");
-			print "foxy"; /* Success */
-		}
-	} catch (Exception $e) {
-		watchdog('foxycart', 'Error processing datafeed from FoxyCart: %err', array('%err' => $e->getMessage()), WATCHDOG_ERROR);
-		foxycart_log("datafeed: Error processing datafeed from FoxyCart: ". $e->getMessage());
-	}
-	//exit;
+        if (module_exists('foxycart_uc')) {
+          foxycart_log("datafeed: creating UC order");
+          foxycart_uc_df_create_order($transaction);
+        }
+      }
+      foxycart_log("datafeed: success");
+      print "foxy"; /* Success */
+    }
+  } catch (Exception $e) {
+    watchdog('foxycart', 'Error processing datafeed from FoxyCart: %err', array('%err' => $e->getMessage()), WATCHDOG_ERROR);
+    foxycart_log("datafeed: Error processing datafeed from FoxyCart: ". $e->getMessage());
+  }
+  //exit;
 }
 
 
 function fclink($text = 'FoxyCart') {
-	return '<a href="https://foxy.io">' . $text .'</a>';
+  return '<a href="https://foxy.io">' . $text .'</a>';
 }
 
 function foxycart_permission() {
-	return array(
-	    'access administration pages' => array(
-	      'title' => t('Access Administration Pages'),
-	      'description' => t('Perform administration tasks for FoxyCart.'),
-	)
-	);
+  return array(
+      'access administration pages' => array(
+        'title' => t('Access Administration Pages'),
+        'description' => t('Perform administration tasks for FoxyCart.'),
+  )
+  );
 }
 
 function foxycart_admin_settings() {
-	global $base_root;
-	$config = config('foxycart.settings');
-	$path = backdrop_get_path('module', 'foxycart');
+  global $base_root;
+  $config = config('foxycart.settings');
+  $path = backdrop_get_path('module', 'foxycart');
 
-	$form['access'] = array(
-	'#type' => 'fieldset',
-  	'#title' => t('FoxyCart settings'),
-   	'#description' => "<p>" . t("Here you can configure all of your !fclink integration settings.\n  If you do not yet have a FoxyCart account, !signup.  It's easy and free to try.", array('!fclink' => fclink('FoxyCart'), '!signup' => fclink(t('Click Here to Sign up')))) . ".</p>");
+  $form['access'] = array(
+  '#type' => 'fieldset',
+    '#title' => t('FoxyCart settings'),
+     '#description' => "<p>" . t("Here you can configure all of your !fclink integration settings.\n  If you do not yet have a FoxyCart account, !signup.  It's easy and free to try.", array('!fclink' => fclink('FoxyCart'), '!signup' => fclink(t('Click Here to Sign up')))) . ".</p>");
 
-	$form['access']['foxycart_subdomain'] = array(
-  	'#type' => 'textfield',
-  	'#title' => t("Your FoxyCart Subdomain"),
-  	'#default_value' => foxycart_get_domain(),
-  	'#size' => 70,
-  	'#description' => t("Your FoxyCart store domain. Either mystore.foxycart.com or customdomain.example.com"),
-  	'#maxlength' => 255,
-  	'#required' => TRUE);
+  $form['access']['foxycart_subdomain'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Your FoxyCart Subdomain"),
+    '#default_value' => foxycart_get_domain(),
+    '#size' => 70,
+    '#description' => t("Your FoxyCart store domain. Either mystore.foxycart.com or customdomain.example.com"),
+    '#maxlength' => 255,
+    '#required' => TRUE);
 
-	$form['access']['foxycart_apikey'] = array(
-  	'#type' => 'textfield',
-  	'#title' => t("Your FoxyCart API Key"),
-  	'#default_value' => foxycart_get_apikey(),
-  	'#size' => 70,
-  	'#description' => t('Your store API key.  Copy and paste this to the advanced <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">admin section of your foxycart account</a>.'),
-  	'#maxlength' => 70,
-  	'#disabled' => TRUE,
-	'#attributes' => array(
-		'readonly' => 'readonly')
-	);
+  $form['access']['foxycart_apikey'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Your FoxyCart API Key"),
+    '#default_value' => foxycart_get_apikey(),
+    '#size' => 70,
+    '#description' => t('Your store API key.  Copy and paste this to the advanced <a href="https://admin.foxycart.com/admin.php?ThisAction=EditAdvancedFeatures">admin section of your foxycart account</a>.'),
+    '#maxlength' => 70,
+    '#disabled' => TRUE,
+  '#attributes' => array(
+    'readonly' => 'readonly')
+  );
 
-	$form['access']['foxycart_reset_apikey'] = array(
-	  	'#type' => 'checkbox',
-	  	'#title' => t("Reset (Generate a new) API Key"),
-	  	'#default_value' => false,
-	  	'#description' => t('Creates a new API Key.  After saving this option, update the FoxyCart Admin with the new key'),
-	  	'#required' => FALSE);
+  $form['access']['foxycart_reset_apikey'] = array(
+      '#type' => 'checkbox',
+      '#title' => t("Reset (Generate a new) API Key"),
+      '#default_value' => false,
+      '#description' => t('Creates a new API Key.  After saving this option, update the FoxyCart Admin with the new key'),
+      '#required' => FALSE);
 
 
-	$form['auth'] = array(
-  	'#type' => 'fieldset',
-  	'#title' => t('Authentication settings'));
+  $form['auth'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Authentication settings'));
 
-	$form['auth']['foxycart_user_sync'] = array(
-  	'#type' => 'checkbox',
-  	'#title' => t("Synchronize Backdrop and FoxyCart User Accounts"),
-  	'#default_value' => $config->get('foxycart_user_sync'),
+  $form['auth']['foxycart_user_sync'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Synchronize Backdrop and FoxyCart User Accounts"),
+    '#default_value' => $config->get('foxycart_user_sync'),
     '#description' => t('This should be enabled if using FoxyCart\'s single sign on (SSO) feature. (Highly recommended)'),
-  	'#required' => FALSE);
+    '#required' => FALSE);
 
-	$form['display'] = array(
-  	'#type' => 'fieldset',
-  	'#title' => t('Display'));
+  $form['display'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Display'));
 
-	$form['display']['foxycart_show_logo'] = array(
-  	'#type' => 'checkbox',
-  	'#title' => t("Show FoxyCart Logo"),
-  	'#default_value' => $config->get('foxycart_show_logo'),
-  	'#description' => t('Display the "Powered By FoxyCart" logo'),
-  	'#required' => FALSE);
+  $form['display']['foxycart_show_logo'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Show FoxyCart Logo"),
+    '#default_value' => $config->get('foxycart_show_logo'),
+    '#description' => t('Display the "Powered By FoxyCart" logo'),
+    '#required' => FALSE);
 
-	// Submit button
-	$form['submit'] = array(
-	  '#type' => 'submit',
-	  '#value' => t('Save settings'),
-	);
+  // Submit button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save settings'),
+  );
 
-	return $form;
+  return $form;
 }
 
 function foxycart_admin_settings_submit($form, &$form_state) {
     $config = config('foxycart.settings');
-	$config->set('foxycart_subdomain', $form_state['values']['foxycart_subdomain']);
+  $config->set('foxycart_subdomain', $form_state['values']['foxycart_subdomain']);
 
-	if ($form_state['values']['foxycart_reset_apikey'] == 1) {
-		$config->clear('foxycart_apikey');
-		foxycart_get_apikey();
-	}
-	$config->set('foxycart_user_sync', $form_state['values']['foxycart_user_sync']);
-	$config->set('foxycart_show_logo', $form_state['values']['foxycart_show_logo']);
+  if ($form_state['values']['foxycart_reset_apikey'] == 1) {
+    $config->clear('foxycart_apikey');
+    foxycart_get_apikey();
+  }
+  $config->set('foxycart_user_sync', $form_state['values']['foxycart_user_sync']);
+  $config->set('foxycart_show_logo', $form_state['values']['foxycart_show_logo']);
     $config->save();
 
-	backdrop_set_message(t('The settings have been saved'));
+  backdrop_set_message(t('The settings have been saved'));
 }
 
 
 function foxycart_decrypt_rc4($inkey, $data)
 {
-	$result = "";
+  $result = "";
 
-	$S = array();
-	$key = array();
+  $S = array();
+  $key = array();
 
-	$kl = strlen($inkey);
-	for ($i = 0; $i < 256; $i++) {
-		$key[$i] = ord($inkey[$i % $kl]);
-		$S[$i] = $i;
-	}
+  $kl = strlen($inkey);
+  for ($i = 0; $i < 256; $i++) {
+    $key[$i] = ord($inkey[$i % $kl]);
+    $S[$i] = $i;
+  }
 
-	for ($i = $j = 0; $i < 256; $i++) {
-		$j = ($j + $key[$i] + $S[$i]) % 256;
-		$tmp = $S[$i];
-		$S[$i] = $S[$j];
-		$S[$j] = $tmp;
-	}
+  for ($i = $j = 0; $i < 256; $i++) {
+    $j = ($j + $key[$i] + $S[$i]) % 256;
+    $tmp = $S[$i];
+    $S[$i] = $S[$j];
+    $S[$j] = $tmp;
+  }
 
-	$dl = strlen($data);
-	for ($a = $i = $j = 0; $i < $dl; $i++) {
-		$a = ($a + 1) % 256;
-		$j = ($j + $S[$a]) % 256;
-		$tmp = $S[$a];
-		$S[$a] = $S[$j];
-		$S[$j] = $tmp;
-		$k = $S[(($S[$a] + $S[$j]) % 256)];
-		$result .= chr(ord($data[$i]) ^ $k);
-	}
+  $dl = strlen($data);
+  for ($a = $i = $j = 0; $i < $dl; $i++) {
+    $a = ($a + 1) % 256;
+    $j = ($j + $S[$a]) % 256;
+    $tmp = $S[$a];
+    $S[$a] = $S[$j];
+    $S[$j] = $tmp;
+    $k = $S[(($S[$a] + $S[$j]) % 256)];
+    $result .= chr(ord($data[$i]) ^ $k);
+  }
 
-	return $result;
+  return $result;
 }
 
 
 function foxycart_get_product_attribute($product_code, $option_name, $option_value = '', $method = 'name') {
-	if (!$product_code || !$option_name) {
-		return FALSE;
-	}
-	if ($option_value == '--OPEN--') {
-		$hash = hash_hmac('sha256', $product_code.$option_name.$option_value, foxycart_get_apikey());
-		$value = $option_name.'||'.$hash.'||open';
-	} else {
-		$hash = hash_hmac('sha256', $product_code.$option_name.$option_value, foxycart_get_apikey());
-		if ($method == 'name') {
-			$value = $option_name.'||'.$hash;
-		} else {
-			$value = $option_value.'||'.$hash;
-		}
-	}
+  if (!$product_code || !$option_name) {
+    return FALSE;
+  }
+  if ($option_value == '--OPEN--') {
+    $hash = hash_hmac('sha256', $product_code.$option_name.$option_value, foxycart_get_apikey());
+    $value = $option_name.'||'.$hash.'||open';
+  } else {
+    $hash = hash_hmac('sha256', $product_code.$option_name.$option_value, foxycart_get_apikey());
+    if ($method == 'name') {
+      $value = $option_name.'||'.$hash;
+    } else {
+      $value = $option_value.'||'.$hash;
+    }
+  }
 
-	return $value;
+  return $value;
 }
 
 /** Prettifies an XML string into a human-readable and indented work of art
@@ -377,43 +379,43 @@ function foxycart_get_product_attribute($product_code, $option_name, $option_val
 *  @param boolean $html_output True if the output should be escaped (for use in HTML)
 */
 function foxycart_xmlpp($xml, $html_output=false) {
-	$xml_obj = new SimpleXMLElement($xml);
-	$level = 4;
-	$indent = 0; // current indentation level
-	$pretty = array();
+  $xml_obj = new SimpleXMLElement($xml);
+  $level = 4;
+  $indent = 0; // current indentation level
+  $pretty = array();
 
-	// get an array containing each XML element
-	$xml = explode("\n", preg_replace('/>\s*</', ">\n<", $xml_obj->asXML()));
+  // get an array containing each XML element
+  $xml = explode("\n", preg_replace('/>\s*</', ">\n<", $xml_obj->asXML()));
 
-	// shift off opening XML tag if present
-	if (count($xml) && preg_match('/^<\?\s*xml/', $xml[0])) {
-		$pretty[] = array_shift($xml);
-	}
+  // shift off opening XML tag if present
+  if (count($xml) && preg_match('/^<\?\s*xml/', $xml[0])) {
+    $pretty[] = array_shift($xml);
+  }
 
-	foreach ($xml as $el) {
-		if (preg_match('/^<([\w])+[^>\/]*>$/U', $el)) {
-			// opening tag, increase indent
-			$pretty[] = str_repeat(' ', $indent) . $el;
-			$indent += $level;
-		} else {
-			if (preg_match('/^<\/.+>$/', $el)) {
-				$indent -= $level;  // closing tag, decrease indent
-			}
-			if ($indent < 0) {
-				$indent += $level;
-			}
-			$pretty[] = str_repeat(' ', $indent) . $el;
-		}
-	}
-	$xml = implode("\n", $pretty);
-	return ($html_output) ? htmlentities($xml) : $xml;
+  foreach ($xml as $el) {
+    if (preg_match('/^<([\w])+[^>\/]*>$/U', $el)) {
+      // opening tag, increase indent
+      $pretty[] = str_repeat(' ', $indent) . $el;
+      $indent += $level;
+    } else {
+      if (preg_match('/^<\/.+>$/', $el)) {
+        $indent -= $level;  // closing tag, decrease indent
+      }
+      if ($indent < 0) {
+        $indent += $level;
+      }
+      $pretty[] = str_repeat(' ', $indent) . $el;
+    }
+  }
+  $xml = implode("\n", $pretty);
+  return ($html_output) ? htmlentities($xml) : $xml;
 }
 
 function foxycart_log($data, $label = NULL) {
-	if (FOXYCART_DEBUG) {
-		// devel module must be enabled
-		dd(date("Y-m-d H:i:s") . ' ' . $data, $label);
-	}
+  if (FOXYCART_DEBUG) {
+    // devel module must be enabled
+    dd(date("Y-m-d H:i:s") . ' ' . $data, $label);
+  }
 }
 
 

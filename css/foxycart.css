@@ -1,35 +1,35 @@
 
-/* $Id$ */ 
+/* $Id$ */
 
 #fc_full_cart_logo
 {
-	display: block;
-	vertical-align: text-bottom;
-	padding-top: 5px;
+  display: block;
+  vertical-align: text-bottom;
+  padding-top: 5px;
 }
 
 #fc_admin_logo
 {
-	float: left;
-	display: block;
-	vertical-align: text-bottom;
-	padding-right: 10px;
+  float: left;
+  display: block;
+  vertical-align: text-bottom;
+  padding-right: 10px;
 }
 
 #fc_cart_contents, .fc_cart_link {
-	display: none;
+  display: none;
 }
 
 #fc_cart_message, #fc_minicart_empty {
-	font-style: italic;
-	color: #888;
-	line-height: 28px;
+  font-style: italic;
+  color: #888;
+  line-height: 28px;
 }
 
 form input.form-button-disabled {
-	cursor: not-allowed;
+  cursor: not-allowed;
 }
 
 input[disabled][type=submit] {
-	cursor: not-allowed;
+  cursor: not-allowed;
 }
