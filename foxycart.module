@@ -516,3 +516,22 @@ function foxycart_remove_form_items($form) {
   unset($form['form_build_id']);
   return $form;
 }
+
+/**
+ * Add automatic validation to a cart link/form.
+ *
+ * @param string $html
+ *   The HTML string for a cart link or form to add validation to.
+ *
+ * @return string
+ *   The HTML string with validation added.
+ *
+ * @see https://wiki.foxycart.com/v/2.0/hmac_validation
+ * @see https://github.com/FoxyCart/FoxyCart-Cart-Validation--PHP
+ */
+function foxycart_add_validation($html) {
+  require_once backdrop_get_path('module', 'foxycart') . '/includes/foxycart.cart_validation.php';
+  FoxyCart_Helper::setSecret(foxycart_get_apikey());
+  FoxyCart_Helper::setCartUrl('https://' . foxycart_get_domain() . '/cart');
+  return FoxyCart_Helper::fc_hash_html($html);
+}
