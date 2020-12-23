@@ -54,35 +54,28 @@ function foxycart_menu() {
   $items = array();
 
   // Admin user pages
-  $items['admin/foxycart'] = array(
+  $items['admin/config/services/foxycart'] = array(
     'title' => 'FoxyCart',
-    'page callback' => 'backdrop_get_form',
-    'access arguments' => array('access administration pages'),
-    'page arguments' => array('foxycart_admin_settings'),
-    'file' => 'foxycart.module');
-
-  $items['admin/foxycart/settings'] = array(
-    'title' => 'Settings',
     'description' => 'Configure FoxyCart Backdrop Settings',
     'page callback' => 'backdrop_get_form',
     'access arguments' => array('access administration pages'),
     'page arguments' => array('foxycart_admin_settings'),
-    'weight' => '1');
+  );
 
   $items['foxycart/datafeed'] = array(
-  'title' => 'Foxy Datafeed',
-   'type' => MENU_CALLBACK,
-  'description' => 'Process the Foxy datafeed',
-  'page callback' => 'foxycart_datafeed',
-  'access callback' => TRUE,
-  'weight' => '4');
-
+    'title' => 'Foxy Datafeed',
+    'type' => MENU_CALLBACK,
+    'description' => 'Process the Foxy datafeed',
+    'page callback' => 'foxycart_datafeed',
+    'access callback' => TRUE,
+  );
   $items['foxycart/sso'] = array(
-  'title' => 'FoxyCart SSO',
-   'type' => MENU_CALLBACK,
-  'description' => 'Process Foxycart SSO',
-  'page callback' => 'foxycart_process_sso',
-  'access callback' => TRUE);
+    'title' => 'FoxyCart SSO',
+    'type' => MENU_CALLBACK,
+    'description' => 'Process Foxycart SSO',
+    'page callback' => 'foxycart_process_sso',
+    'access callback' => TRUE,
+  );
 
   return $items;
 }
@@ -243,9 +236,10 @@ function foxycart_admin_settings() {
   $path = backdrop_get_path('module', 'foxycart');
 
   $form['access'] = array(
-  '#type' => 'fieldset',
+    '#type' => 'fieldset',
     '#title' => t('FoxyCart settings'),
-     '#description' => "<p>" . t("Here you can configure all of your !fclink integration settings.\n  If you do not yet have a FoxyCart account, !signup.  It's easy and free to try.", array('!fclink' => fclink('FoxyCart'), '!signup' => fclink(t('Click Here to Sign up')))) . ".</p>");
+    '#description' => "<p>" . t("Here you can configure all of your !fclink integration settings.\n  If you do not yet have a FoxyCart account, !signup.  It's easy and free to try.", array('!fclink' => fclink('FoxyCart'), '!signup' => fclink(t('Click Here to Sign up')))) . ".</p>",
+  );
 
   $form['access']['foxycart_subdomain'] = array(
     '#type' => 'textfield',
