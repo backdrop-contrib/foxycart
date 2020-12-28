@@ -29,18 +29,17 @@ function foxycart_api_getuser($email) {
 
 
 /**
- * Used to synchronize user accounts with FoxyCart.com
- * when a user account is updated
+ * Used to synchronize user accounts with FoxyCart.com when a user account is
+ * updated.
  */
-function foxycart_user_presave(&$edit, $account, $category) {
-
-  foxycart_log("foxycart_user_presave: begin");
-  if ( config_get('foxycart.settings', 'foxycart_user_sync') == true && isset($edit['pass']) ) {
+function foxycart_user_presave($account) {
+  if (config_get('foxycart.settings', 'foxycart_user_sync') == TRUE && isset($account->pass)) {
+    foxycart_log("foxycart_user_presave: begin");
     foxycart_log("foxycart_api_update_user: begin");
-    $foxyresponse = foxycart_api_update_user($edit['mail'], $edit['pass']);
-    foxycart_log("foxycart_api_update_user: end, pw: " . $edit['pass'] . " response: " . (string)$foxyresponse->result);
-    if ((string)$foxyresponse->result == 'SUCCESS') {
-      $edit['data']['fc_customer_id'] = (integer)$foxyresponse->customer_id;
+    $foxyresponse = foxycart_api_update_user($account->mail, $account->pass);
+    foxycart_log("foxycart_api_update_user: end, pw: " . $account->pass . " response: " . (string) $foxyresponse->result);
+    if ((string) $foxyresponse->result == 'SUCCESS') {
+      $account->data['fc_customer_id'] = (integer) $foxyresponse->customer_id;
     }
   }
 }
