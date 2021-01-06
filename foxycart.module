@@ -221,15 +221,6 @@ function fclink($text = 'FoxyCart') {
   return '<a href="https://foxy.io">' . $text .'</a>';
 }
 
-function foxycart_permission() {
-  return array(
-      'access administration pages' => array(
-        'title' => t('Access Administration Pages'),
-        'description' => t('Perform administration tasks for FoxyCart.'),
-  )
-  );
-}
-
 function foxycart_admin_settings() {
   global $base_root;
   $config = config('foxycart.settings');
