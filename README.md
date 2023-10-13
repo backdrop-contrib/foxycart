@@ -45,7 +45,7 @@ To submit bug reports and feature suggestions, or to track changes:
 Current Maintainers
 -------------------
 
-* [Peter Anderson](https://github.com/BWPanda)
+* Seeking maintainer(s)
 
 Credits
 -------
