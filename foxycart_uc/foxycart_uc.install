@@ -41,5 +41,5 @@ function foxycart_uc_update_1000() {
 
   // Delete variables.
   update_variable_del('foxycart_uc_add_to_cart_qty');
-  update_variable_del('foxycart_uc_update_node_view')
+  update_variable_del('foxycart_uc_update_node_view');
 }
